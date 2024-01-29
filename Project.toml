@@ -1,0 +1,7 @@
+name = "SchrodingerSolver"
+uuid = "d7095373-0718-4e73-8ad3-82f9f7211faa"
+authors = ["walexaindre <walexaindre@hotmail.com\n> and contributors"]
+version = "1.0.0"
+
+[compat]
+julia = "1"
