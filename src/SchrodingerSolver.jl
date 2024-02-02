@@ -3,6 +3,7 @@ module SchrodingerSolver
     using CUDA.CUSPARSE
 
     using SparseMatricesCSR
+    using StaticArrays
 
     using Printf
     using MKLSparse
@@ -20,4 +21,7 @@ module SchrodingerSolver
     using SparseMatricesCSR
     using Dictionaries
     using PrettyTables
+
+    include("./core/index.jl")
+
 end
