@@ -1,169 +1,109 @@
-include("AbstractMesh2.jl")
-include("AbstractMeshTypes.jl")
-include("AbstractMeshBase.jl")
-
-export linear_indexing, step, step_x, step_y, step_z, linear_size
-
-export MetaMesh2D, AbstractMesh
-
-
-
-
-
-
-
-@inline function step(index::Int, lim::Int)
-    r1 = (index - 1 < 1) ? lim : index - 1
-    r2 = (index + 1 > lim) ? 1 : index + 1
-    (r1, r2)
+struct AbstractMesh{T,N} <: AbstractArray{Int,N}
+    dims::NTuple{N,Int}
+    multiplied_dims::NTuple{N,Int}
 end
 
-@inline function step(index::Int, lim::Int, step_size::Int)
-    offset = index - 1
-    r1 = mod(offset - step_size, lim) + 1
-    r2 = mod(offset + step_size, lim) + 1
-    (r1, r2)
-end
+@inline AbstractMesh(::Type{T}, dims::Int...) where {T<:Int} = AbstractMesh(T, dims)
+@inline AbstractMesh(::Type{T}, dims::NTuple{N,Int}) where {T<:Int,N} = AbstractMesh{T,N}(dims, cumprod(dims))
 
 
-@inline function step_x(index::Int, metadata::MetaMesh1D)
-    step(index, metadata.M)
-end
+@inline Base.similar(A::AbstractMesh, ::Type{T}, dims::Dims) where {T<:Int} = AbstractMesh(T, dims)
+@inline Base.copy(A::AbstractMesh{T}) where {T<:Int} = AbstractMesh(T,A.dims)
+@inline Base.size(A::AbstractMesh) = A.dims
+@inline Base.length(A::AbstractMesh) = A.multiplied_dims[end]
 
-@inline function step_x(index::Int, metadata::MetaMesh2D)
-    step(index, metadata.M)
-end
-
-@inline function step_x(index::Int, metadata::MetaMesh3D)
-    step(index, metadata.M)
-end
-
-@inline function step_y(index::Int, metadata::MetaMesh2D)
-    step(index, metadata.N)
-end
-
-@inline function step_y(index::Int, metadata::MetaMesh3D)
-    step(index, metadata.N)
-end
-
-@inline function step_z(index::Int, metadata::MetaMesh3D)
-    step(index, metadata.L)
-end
-
-@inline function step_x(index::Int, step_size::Int, metadata::MetaMesh)
-    step(index, metadata.M, step_size)
-end
-
-@inline function step_y(index::Int, step_size::Int, metadata::MetaMesh2D)
-    step(index, metadata.N, step_size)
-end
-
-@inline function step_y(index::Int, step_size::Int, metadata::MetaMesh3D)
-    step(index, metadata.N, step_size)
-end
-
-@inline function step_z(index::Int, step_size::Int, metadata::MetaMesh3D)
-    step(index, metadata.L, step_size)
-end
-
-
-include("AbstractMesh1D.jl")
-include("AbstractMesh2D.jl")
-include("AbstractMesh3D.jl")
-
-
-@inline function get_stencil(index::Int,start_depth::Int,end_depth::Int,metadata::MetaMesh2D)
-    depth =  end_depth-start_depth+1
-
-    out = zeros(Int64,1+depth*4)
-
-    out[1] = index
-
-    for dist in start_depth:end_depth
-        @show step_x(index,dist,metadata)...,step_y(index,dist,metadata)...
-        out[(4*(dist-1)+2):(4*(dist)+1)] = [step_x(index,dist,metadata)...,step_y(index,dist,metadata)...]
+@inline function Base.getindex(A::AbstractMesh{T,N}, I::Vararg{Int,N}) where {T<:Int,N}
+    I = @. mod(I-1,A.dims) + 1
+    index = I[1]
+    for i in 2:N
+        index += (I[i]-1)*A.multiplied_dims[i-1]
     end
-    out    
+    index
 end
 
-@inline function get_stencil(index::Int,start_depth::Int,end_depth::Int,metadata::MetaMesh3D)
-    depth =  end_depth-start_depth+1
-
-    out = zeros(Int64,1+depth*6)
-
-    out[1] = index
-
-    for dist in start_depth:end_depth
-        out[(6*(dist-1)+2):(6*(dist)+1)] = [step_x(index,dist,metadata)...,step_y(index,dist,metadata)...,step_z(index,dist,metadata)...]
+@inline function Base.getindex(A::AbstractMesh{T, N}, index::V) where {T<:Int, V<:Int, N}
+    @boundscheck begin
+        if !(1 <= index <= length(A))
+            throw(BoundsError(A, index))
+        end
     end
-    out    
-end
 
+    indices = MVector{N,Int}(undef)
+    remainder = index - 1
 
-
-
-@inline function get_linear_stencil(index::Int,start_depth::Int,end_depth::Int,metadata::MetaMesh2D)
-    depth =  end_depth-start_depth+1
-
-    out = zeros(Int64,1+depth*4)
-
-    out[1] = index
-    
-    x,y = linear_indexing(index,metadata)
-
-    for dist in 1:depth
-        step_mov = start_depth+dist-1
-
-        lx,rx =step_x(x,step_mov,metadata)
-        olx = linear_indexing(lx,y,metadata)
-        orx = linear_indexing(rx,y,metadata)
-
-        ly,ry =step_y(y,step_mov,metadata)
-        oly = linear_indexing(x,ly,metadata)
-        ory = linear_indexing(x,ry,metadata)
-
-        out[(4*dist-2):(4*dist+1)] = [olx,orx,oly,ory]
+    for idx in N:-1:2
+        indices[idx], remainder = divrem(remainder, A.multiplied_dims[idx-1])
     end
-    out  
+
+    indices[1] = remainder
+
+    Tuple(indices.+1)
 end
 
-@inline function get_linear_stencil(index::Int,start_depth::Int,end_depth::Int,metadata::MetaMesh3D)
-    depth =  end_depth-start_depth+1
-    outdim = 1+depth*6
-    #@show outdim,depth,end_depth,start_depth
-    out = zeros(Int64,outdim)
+@inline function Base.getindex(A::AbstractMesh{T,1}, ::Colon) where {T<:Int}
+    collect(1:A.dims[1])
+end
 
-    out[1] = index
+@inline function Base.getindex(A::AbstractMesh{T,2}, ::Colon,col::V) where {T<:Int,V<:Int}
+    collect(getindex(A,1,col):getindex(A,A.dims[1],col))
+end
 
-    x,y,z = linear_indexing(index,metadata)
+@inline function Base.getindex(A::AbstractMesh{T,2},row::V,::Colon) where {T<:Int,V<:Int}
+    collect(getindex(A,row,1):getindex(A,row,A.dims[2]))
+end
 
-    for dist in 1:depth
-        step_mov = start_depth+dist-1
+@inline function Base.getindex(A::AbstractMesh{T,3},::Colon,col::V,::Colon) where {T<:Int,V<:Int}
 
-        lx,rx =step_x(x,step_mov,metadata)
-        olx = linear_indexing(lx,y,z,metadata)
-        orx = linear_indexing(rx,y,z,metadata)
-
-        ly,ry =step_y(y,step_mov,metadata)
-        oly = linear_indexing(x,ly,z,metadata)
-        ory = linear_indexing(x,ry,z,metadata)
-
-        lz,rz =step_z(z,step_mov,metadata)
-        olz = linear_indexing(x,y,lz,metadata)
-        orz = linear_indexing(x,y,rz,metadata)
-
-
-        out[(6*dist-4):(6*dist+1)] = [olx,orx,oly,ory,olz,orz]
+    @boundscheck begin
+        if !(1 <= col <= A.dims[2])
+            throw(BoundsError(A, (:,col,:)))
+        end
     end
-    out 
+
+    out  = Vector{T}(undef,A.dims[1]*A.dims[3])
+
+    for zidx = 1:A.dims[3]
+        display((zidx-1)*A.dims[1]+1:zidx*A.dims[1])
+        out[(zidx-1)*A.dims[1]+1:zidx*A.dims[1]] = collect(getindex(A,1,col,zidx):getindex(A,A.dims[1],col,zidx))
+    end
+    out
 end
 
 
-#Base methods
 
 
 
 
 
 
-#################################################################
+################################################################
+#               Implement Stencil Like Operations
+#
+################################################################
+struct Stencil{T<:Int,N} <: AbstractArray{Int,N}
+    dims::NTuple{N,Int}
+    depth::T
+end
+
+@inline Base.IndexStyle(::Type{<:Stencil}) = IndexLinear()
+
+@inline function Base.getindex(A::Stencil{T,N}, I::Vararg{Int,N}) where {T<:Int,N} 
+
+end
+
+
+struct LinearStencil{T<:Int,N}
+    up::NTuple{N,T}
+    down::NTuple{N,T}
+    left::NTuple{N,T}
+    right::NTuple{N,T}
+    center::T
+end
+
+struct NDStencil{T<:Int,N,M}
+    up::NTuple{M,NTuple{N,T}}
+    down::NTuple{M,NTuple{N,T}}
+    left::NTuple{M,NTuple{N,T}}
+    right::NTuple{M,NTuple{N,T}}
+    center::NTuple{N,T}
+end
