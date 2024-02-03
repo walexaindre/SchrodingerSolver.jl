@@ -5,6 +5,7 @@ using .ThreadedSparseCSR
 #Abstract
 #include("ComputeBackend/ComputeBackend.jl")
 include("AbstractMesh/AbstractMesh.jl")
+include("Grid/Grid.jl")
 #include("SpaceTimeGrid/SpaceTimeGrid.jl")
 #include("SchrodingerPDE/SchrodingerPDE.jl")
 #include("SpaceDiscretization/SpaceDiscretization.jl")

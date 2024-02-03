@@ -2,6 +2,7 @@ module SchrodingerSolver
     using CUDA
     using CUDA.CUSPARSE
 
+    using Distributed
     using SparseMatricesCSR
     using StaticArrays
 
