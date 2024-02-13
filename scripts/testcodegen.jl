@@ -2,28 +2,15 @@ using BenchmarkTools
 
 using SchrodingerSolver
 
-Mesh2 = AbstractMesh(Int64,10,4,2)
-function llvms(idx)
-    Mesh = AbstractMesh(Int64,10,4,2)
+import SchrodingerSolver:Stencil,StencilPattern, AbstractMesh,to_matrix,LinearOffsetStencil
 
-    @inbounds Mesh[idx]
-end
+mesh2 = AbstractMesh(Int,20,15)
 
-a=1
-#@btime llvms($a)
+pat = StencilPattern(2,1,0,1)
+
+stencil = Stencil(pat,mesh2)
+
+mat = to_matrix(Matrix{Int},stencil)
 
 
-function rev(i,n)
-    mod(i - 1, n) + 1
-end
-
-function rews(i,n)
-    if 1<=i<=n
-        return i
-    else
-        return mod(i - 1, n) + 1
-    end
-end
-
-n = rand(50000:3000000);
-a = rand(-n:2*n,10000000);
+rr =  LinearOffsetStencil(Int,(3,4),(0,1))
