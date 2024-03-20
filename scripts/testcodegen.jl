@@ -2,7 +2,7 @@ using BenchmarkTools
 
 using SchrodingerSolver
 
-import SchrodingerSolver: Stencil, AbstractMesh, LinearOffsetStencil, StencilIterator
+#import SchrodingerSolver: Stencil, AbstractMesh, LinearOffsetStencil, StencilIterator
 
 
 
@@ -57,3 +57,11 @@ end
 input = [[3,2,4,2,7,6] [8,0,2,1,7,8] [2,2,10,4,1,9] [1,5,4,6,5,0] [5,4,1,7,5,6] [5,0,2,7,6,8]]
 filterv = [[0,1,0] [1,2,1] [0,1,0]]
 conv_1(input, filterv)
+
+
+
+#bmark
+
+mesh3d = AbstractMesh(Int, 30, 30, 30)
+
+randvals = rand(-20*20*20:30*30*34,500)
