@@ -63,7 +63,7 @@ end
 #Evaluate every range at the given index I
 @inline function Base.getindex(A::Grid{T,R,N},
                                I::Vararg{Int,N}) where {T,R<:AbstractRange{T},N}
-    return getindex.(A.ranges, mod.(I.-1,A.dims).+1)
+    return getindex.(A.ranges, mod1.(I.-1,A.dims))
 end
 
 @inline function Base.getindex(A::Grid{T,R,2}, ::Colon,
