@@ -4,6 +4,7 @@ authors = ["walexaindre <walexaindre@hotmail.com\n> and contributors"]
 version = "1.0.0"
 
 [deps]
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CUDA = "052768ef-5323-5732-b1bb-66c8b64840ba"
 Dictionaries = "85a47980-9c8c-11e8-2b9f-f7ca1fa99fb4"
 Distributed = "8ba89e20-285c-5b6f-9357-94700520ee1b"
