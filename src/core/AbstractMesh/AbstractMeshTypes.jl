@@ -13,3 +13,5 @@ struct GhostPeriodicAbstractMesh{T<:Integer,N} <: AbstractMesh{T,N}
     multiplied_dims::NTuple{N,T}
     depth::T
 end
+
+export AbstractMesh, PeriodicAbstractMesh, GhostPeriodicAbstractMesh

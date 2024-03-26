@@ -1,4 +1,4 @@
-struct Grid{T,Range<:AbstractRange{T},N} <: AbstractArray{Int,N}
+struct Grid{T<:AbstractFloat,Range<:AbstractRange{T},N} <: AbstractArray{Int,N}
     ranges::NTuple{N,Range}
     dims::NTuple{N,Int}
     h::NTuple{N,T}
@@ -57,17 +57,20 @@ end
 
 @inline Base.size(A::Grid) = A.dims
 @inline Base.copy(A::Grid{T}) where {T<:Int} = Grid(T, A.ranges, A.dims)
-@inline Base.convert(::Type{AbstractMesh}, A::Grid) = AbstractMesh(Int,A.dims)
-
+@inline Base.convert(::Type{AbstractMesh}, A::Grid) = AbstractMesh(Int, A.dims)
 
 #Evaluate every range at the given index I
 @inline function Base.getindex(A::Grid{T,R,N},
                                I::Vararg{Int,N}) where {T,R<:AbstractRange{T},N}
-    return getindex.(A.ranges, mod1.(I.-1,A.dims))
+    return getindex.(A.ranges, mod1.(I .- 1, A.dims))
+end
+
+@inline function Base.getindex(A::Grid{T,R,1}, ::Colon) where {T,R<:AbstractRange{T}}
+    return collect(A.ranges[1])
 end
 
 @inline function Base.getindex(A::Grid{T,R,2}, ::Colon,
-                               col::V) where {T,R<:AbstractRange{T},V<:Int}
+                               col::V) where {T,R<:AbstractRange{T},V<:Integer}
     @boundscheck begin
         if !(1 <= col <= 2)
             throw(BoundsError(A, (:, col)))
@@ -83,14 +86,14 @@ end
 
 mod
 
-@inline function Base.getindex(A::Grid{T,R,3}, ::Colon, col::V,
-                               ::Colon) where {T,R<:AbstractRange{T},V<:Int}
+@inline function Base.getindex(A::Grid{T,R,3}, ::Colon,
+                               col::V) where {T,R<:AbstractRange{T},V<:Integer}
     @boundscheck begin
         if !(1 <= col <= 3)
-            throw(BoundsError(A, (:, col, :)))
+            throw(BoundsError(A, (:, col)))
         end
     end
-    
+
     if col == 1
         return repeat(A.ranges[1]; outer=size(A, 2) * size(A, 3))
     elseif col == 2
@@ -98,6 +101,18 @@ mod
     else
         return repeat(A.ranges[3]; inner=size(A, 1) * size(A, 2))
     end
+end
+
+@inline function Base.getindex(A::Grid{T,R,N}, ::Colon,
+                               col::V) where {T,R<:AbstractRange{T},N,V<:Integer}
+    @boundscheck begin
+        if !(1 <= col <= N)
+            throw(BoundsError(A, (:, col)))
+        end
+    end
+
+    return repeat(A.ranges[col]; inner=prod(size(A)[begin:(col - 1)]),
+                  outer=prod(size(A)[(col + 1):end]))
 end
 
 export Grid

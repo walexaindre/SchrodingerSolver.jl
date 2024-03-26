@@ -2,7 +2,8 @@ using BenchmarkTools
 
 using SchrodingerSolver
 
-import SchrodingerSolver:  PeriodicAbstractMesh, getindex2, getindex3
+
+import SchrodingerSolver:  PeriodicGrid
 
 
 #stencil = Stencil(pat,mesh2)
@@ -61,29 +62,6 @@ conv_1(input, filterv)
 
 #bmark
 
-mesh3d = PeriodicAbstractMesh(Int, 30, 30, 30)
-
-randvals = rand(-20*20*20:30*30*34,500,3)
-
-function numleak(randvals)
-    rx = 0;
-    for i in 1:500
-        rx += getindex(mesh3d,randvals[i,1],randvals[i,2],randvals[i,3])
-    end
-    rx
-end
-
-function rv(A,col)
-    if col == 1
-        return repeat(1:A.dims[1]; outer=size(A, 2) * size(A, 3))
-    elseif col == 2
-        return repeat(1:A.dims[2]; inner=size(A, 1), outer=size(A, 3))
-    else
-        return repeat(1:A.dims[3]; inner=size(A, 1) * size(A, 2))
-    end
-end
-
-randvals = [rv(mesh3d,1) rv(mesh3d,2) rv(mesh3d,3)]
-
-@btime getindex(mesh3d,$randvals[1,1],$randvals[1,2],$randvals[1,3])
-@btime numleak($randvals)
+A = PeriodicGrid(Int,Float64,0.05,(1:0.5:4,2:0.5:6))
+A = PeriodicGrid(Int,Float64,0.05,1:0.5:4,2:0.5:6)
+A = PeriodicGrid(Int,Float64,0.05,(0.5,1.5),(1.0,3.0),(3.5,8.5))
