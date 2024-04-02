@@ -6,4 +6,3 @@ struct SecondDerivativeCoefficients{T <: AbstractFloat, V <: Integer}
     β::T
     order::V
 end
-

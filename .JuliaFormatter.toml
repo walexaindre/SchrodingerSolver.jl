@@ -1,2 +1,7 @@
 # See https://domluna.github.io/JuliaFormatter.jl/stable/ for a list of options
 style = "yas"
+always_use_return = false
+short_to_long_function_def=false
+long_to_short_function_def=true
+whitespace_in_kwargs=true
+margin = 85
