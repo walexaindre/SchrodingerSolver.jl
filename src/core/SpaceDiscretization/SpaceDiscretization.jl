@@ -99,10 +99,27 @@ function SpaceDiscretization(a::T, b::T, c::T, α::T, β::T, order::V, atol::T =
     return SpaceDiscretization{T,V}(a, b, c, α, β, order)
 end
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function get_A_format_IJV(::Type{T}, Mesh::AbstractMesh{V,N},
                           Order::NTuple{N,SpaceDiscretization{T,V}}) where {T<:AbstractFloat,
                                                                             V<:Integer,
                                                                             N}
+
     #Get the IJV format of the matrix A
 
 end

@@ -3,3 +3,12 @@ const SpaceDiscretizationDefaults::Dict{Symbol,SecondDerivativeCoefficients{Floa
 function register()
     
 end
+
+function unregister()
+    
+end
+
+function get_def()
+        
+end
+
