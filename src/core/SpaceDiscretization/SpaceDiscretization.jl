@@ -1,10 +1,10 @@
 function estimate_order(a::T, b::T, c::T, α::T, β::T, atol::T = 0,
-                        rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloat}
+                        rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloatOrRational{Int}}
     if !isapprox(a + b + c, 1 + 2 * (α + β); atol = atol, rtol = rtol)
         return 0
     end
 
-    for idx in 2:2:16
+    for idx in 2:2:36
         pow2 = 2^idx
         pow3 = 3^idx
 
@@ -18,12 +18,12 @@ function estimate_order(a::T, b::T, c::T, α::T, β::T, atol::T = 0,
         end
     end
 
-    throw(ArgumentError("Order higher than 16... "))
+    throw(ArgumentError("Order higher than 36... "))
 end
 
 function validate_constraints(a::T, b::T, c::T, α::T, β::T, order::V, atol::T = 0,
-                              rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloat,
-                                                                           V<:Integer}
+                              rtol::T = atol == 0 ? atol : √eps(T)) where {V<:Integer,
+                                                                           T<:AbstractFloatOrRational{V}}
     if order < 2
         throw(ArgumentError("Order must be greater than 1 and even at space discretization => [ order = $order ]"))
     end
@@ -51,10 +51,10 @@ function validate_constraints(a::T, b::T, c::T, α::T, β::T, order::V, atol::T 
     end
 end
 
-function validate_constraints(SpaceDiscretization::SpaceDiscretization{T,V},
+function validate_constraints(SpaceDiscretization::SpaceDiscretization{V,T},
                               atol::T = 0,
-                              rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloat,
-                                                                           V<:Integer}
+                              rtol::T = atol == 0 ? atol : √eps(T)) where {V<:Integer,
+                                                                           T<:AbstractFloatOrRational{V}}
     return validate_constraints(SpaceDiscretization.a, SpaceDiscretization.b,
                                 SpaceDiscretization.c, SpaceDiscretization.α,
                                 SpaceDiscretization.β, SpaceDiscretization.order,
@@ -62,7 +62,7 @@ function validate_constraints(SpaceDiscretization::SpaceDiscretization{T,V},
                                 rtol)
 end
 
-function validate_positive_definite(α::T, β::T) where {T<:AbstractFloat}
+function validate_positive_definite(α::T, β::T) where {T<:AbstractFloatOrRational{Int}}
 
     #By Gershgorin's theorem the generated matrix A is PSD
     #If |λ-1|≤ 2 ( α + β ) => -2 ( α + β ) ≤ λ - 1 ≤ 2 ( α + β ) => 1 - 2 ( α - β ) ≤ λ ≤ 1 + 2 ( α + β )
@@ -71,13 +71,13 @@ function validate_positive_definite(α::T, β::T) where {T<:AbstractFloat}
         throw(ArgumentError("Generated A matrix will not be positive definite..."))
     end
 end
-
-function validate_positive_definite(SpaceDiscretization::SpaceDiscretization{T,V}) where {T<:AbstractFloat,
-                                                                                          V<:Integer}
+Rational
+function validate_positive_definite(SpaceDiscretization::SpaceDiscretization{V,T}) where {V<:Integer,
+                                                                                          T<:AbstractFloatOrRational{V}}
     validate_positive_definite(SpaceDiscretization.α, SpaceDiscretization.β)
 end
 
-function check_validity(SpaceDiscretization::SpaceDiscretization{T,V},
+function check_validity(SpaceDiscretization::SpaceDiscretization{V,T},
                         atol::T = 0,
                         rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloat,
                                                                      V<:Integer}
@@ -86,39 +86,23 @@ function check_validity(SpaceDiscretization::SpaceDiscretization{T,V},
 end
 
 function check_validity(a::T, b::T, c::T, α::T, β::T, order::V, atol::T = 0,
-                        rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloat,
-                                                                     V<:Integer}
+                        rtol::T = atol == 0 ? atol : √eps(T)) where {V<:Integer,
+                                                                     T<:AbstractFloatOrRational{V}}
     validate_constraints(a, b, c, α, β, order, atol, rtol)
     validate_positive_definite(α, β)
 end
 
 function SpaceDiscretization(a::T, b::T, c::T, α::T, β::T, order::V, atol::T = 0,
-                             rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloat,
-                                                                          V<:Integer}
+                             rtol::T = atol == 0 ? atol : √eps(T)) where {V<:Integer,
+                                                                          T<:AbstractFloatOrRational{V}}
     check_validity(a, b, c, α, β, order, atol, rtol)
-    return SpaceDiscretization{T,V}(a, b, c, α, β, order)
+    return SpaceDiscretization{V,T}(a, b, c, α, β, order)
 end
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 function get_A_format_IJV(::Type{T}, Mesh::AbstractMesh{V,N},
-                          Order::NTuple{N,SpaceDiscretization{T,V}}) where {T<:AbstractFloat,
-                                                                            V<:Integer,
-                                                                            N}
+                          Order::NTuple{N,Symbol}) where {V<:Integer,
+                                                          T<:AbstractFloatOrRational{V},
+                                                          N}
 
     #Get the IJV format of the matrix A
 
