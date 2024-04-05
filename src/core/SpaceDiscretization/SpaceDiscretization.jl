@@ -190,24 +190,32 @@ function get_Δ_format_IJV(::Type{T}, Grid::AG,
 
         if !isapprox(SD.a, 0)
             values[1] += (-2 * SD.a) / (h * h)
-            push!(values, SD.a / (h * h))
-            offsets = [V(1), V(-1)]
+
+            nondiaga = SD.a / (h * h)
+            push!(values, nondiaga, nondiaga)
+            push!(offsets,V(1), V(-1))
         end
 
         if !isapprox(SD.b, 0)
             values[1] += (-2 * SD.b) / (h * h)
-            push!(values, SD.b / (4 * h * h))
-            offsets = [V(2), V(-2)]
+            
+            nondiagb = SD.b / (4 * h * h)
+            push!(values, nondiagb, nondiagb)
+            push!(offsets,V(2), V(-2))
         end
 
         if !isapprox(SD.c, 0)
             values[1] += (-2 * SD.c) / (h * h)
-            push!(values, SD.c / (9 * h * h))
-            offsets = [V(3), V(-3)]
+            
+            nondiagc = SD.c / (9 * h * h)
+            push!(values, nondiagc, nondiagc)
+            push!(offsets,V(3), V(-3))
         end
 
         count = size(offsets, 1)
         space_usage = count * length(submesh)
+
+        println(offsets,values)
 
         _I = zeros(Int64, space_usage) #row idx
         _J = zeros(Int64, space_usage) #column idx

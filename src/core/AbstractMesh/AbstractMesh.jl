@@ -95,7 +95,7 @@ end
 @inline function apply_offsets(A::PeriodicAbstractMesh{T,1},
                                idx::T,
                                offsets::Vector{T}) where {T<:Integer}
-    return @inbounds getindex(A, idx .+ offsets)
+    return [getindex(A, idx + offset) for offset in offsets]
 end
 
 @inline function extract_every_dimension(A::PeriodicAbstractMesh{T,N}) where {T<:Integer,

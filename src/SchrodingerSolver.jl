@@ -7,7 +7,7 @@ module SchrodingerSolver
     using StaticArrays
 
     using Printf
-    using MKLSparse
+    #using MKLSparse
     using SparseArrays
 
     using LinearAlgebra
