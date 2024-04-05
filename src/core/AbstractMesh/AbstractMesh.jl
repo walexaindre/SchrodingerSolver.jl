@@ -13,8 +13,9 @@
 ##
 ################################################################################################
 
-@inline PeriodicAbstractMesh(::Type{T}, dims::T) where {T<:Integer} = PeriodicAbstractMesh(T,
-                                                                                           dims)
+@inline PeriodicAbstractMesh(::Type{T}, dim::T) where {T<:Integer} = PeriodicAbstractMesh{T,
+                                                                                          1}((dim,),
+                                                                                             (dim,))
 
 @inline PeriodicAbstractMesh(::Type{T}, dims::NTuple{N,T}) where {T<:Integer,N} = PeriodicAbstractMesh{T,
                                                                                                        N}(dims,
@@ -25,12 +26,16 @@
 @inline Base.copy(A::PeriodicAbstractMesh{T}) where {T<:Integer} = PeriodicAbstractMesh(T,
                                                                                         A.dims)
 
+#@inline Base.getindex(A::PeriodicAbstractMesh{T,1},
+#                      I::T) where {T<:Integer} = @inbounds LinearIndices(A.dims)[I]
+
 @inline function Base.getindex(A::PeriodicAbstractMesh{T,N},
                                I::Vararg{Int,N}) where {T<:Integer,N}
     return @inbounds LinearIndices(A.dims)[mod1.(I, A.dims)...]
 end
 
-@inline function Base.getindex(A::PeriodicAbstractMesh{T,1}, ::Colon) where {T<:Integer}
+@inline function Base.getindex(A::PeriodicAbstractMesh{T,1},
+                               ::Colon) where {T<:Integer}
     return collect(1:A.dims[1])
 end
 
@@ -86,3 +91,19 @@ end
     end
     return index
 end
+
+@inline function apply_offsets(A::PeriodicAbstractMesh{T,1},
+                               idx::T,
+                               offsets::Vector{T}) where {T<:Integer}
+    return @inbounds getindex(A, idx .+ offsets)
+end
+
+@inline function extract_every_dimension(A::PeriodicAbstractMesh{T,N}) where {T<:Integer,
+                                                                              N}
+    return (PeriodicAbstractMesh(T, A.dims[idx]) for idx in 1:N)
+end
+
+#Conversions
+
+@inline PeriodicAbstractMesh(P::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N} = PeriodicAbstractMesh(V,
+                                                                                                                               P.dims)

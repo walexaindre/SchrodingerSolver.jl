@@ -1,14 +1,15 @@
 abstract type AbstractGrid{T,N} <: AbstractArray{T,N} end
 
 struct PeriodicGrid{V<:Integer,T<:Real,Range<:AbstractRange{T},N} <:
-       AbstractGrid{Tuple{V,V},N}
+       AbstractGrid{NTuple{N,T},N}
     ranges::NTuple{N,Range}
     dims::NTuple{N,V}
     h::NTuple{N,T}
-    τ::T    
+    τ::T
 end
 
-struct GhostPeriodicGrid{V<:Integer,T<:Real,Range<:AbstractRange{T},N} <: AbstractGrid{V,N}
+struct GhostPeriodicGrid{V<:Integer,T<:Real,Range<:AbstractRange{T},N} <:
+       AbstractGrid{NTuple{N,T},N}
     ranges::NTuple{N,Range}
     dims::NTuple{N,V}
     h::NTuple{N,T}
