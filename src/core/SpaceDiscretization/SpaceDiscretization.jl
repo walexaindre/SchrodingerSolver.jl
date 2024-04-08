@@ -167,47 +167,58 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
     findnz(A)
 end
 
-function get_Δ_format_IJV(::Type{T}, Grid::AG,
+function get_D_format_IJV(::Type{T}, Grid::AG,
                           Order::NTuple{N,Symbol}) where {N,
                                                           T<:AbstractFloatOrRational,
                                                           AG<:AbstractGrid{NTuple{N,
                                                                                   T},
                                                                            N}}
+
+    if N>3
+        throw(ArgumentError("Only 1D, 2D and 3D grids are supported..."))
+    end
+
     Mesh = PeriodicAbstractMesh(Grid)
     V = typeof(Mesh.dims[1])
     submeshes = extract_every_dimension(Mesh)
 
-    temp = []
+    #Type is needed for compiler inference
+    temp::Array{SparseMatrixCSC{T,V},1} = []
+
     for (h, ord, submesh) in zip(Grid.h, Order, submeshes)
         SD = get(SpaceDiscretizationDefaults, ord, nothing)
 
         if isnothing(SD)
-            throw(ArgumentError("Order not found in SpaceDiscretizationDefaults..."))
+            throw(ArgumentError("Order not found in SpaceDiscretizationDefaults... Please use register function to add new orders."))
         end
 
         values = [zero(T)]
         offsets = [V(0)]
+        hsqr = h^2
 
         if !isapprox(SD.a, 0)
-            values[1] += (-2 * SD.a) / (h * h)
+            nondiaga = SD.a / hsqr
+            diaga = -2 * nondiaga
 
-            nondiaga = SD.a / (h * h)
+            values[1] += diaga
             push!(values, nondiaga, nondiaga)
             push!(offsets, V(1), V(-1))
         end
 
         if !isapprox(SD.b, 0)
-            values[1] += (-2 * SD.b) / (4 * h * h)
+            nondiagb = SD.b / (4 * hsqr)
+            diagb = -2 * nondiagb
 
-            nondiagb = SD.b / (4 * h * h)
+            values[1] += diagb
             push!(values, nondiagb, nondiagb)
             push!(offsets, V(2), V(-2))
         end
 
         if !isapprox(SD.c, 0)
-            values[1] += (-2 * SD.c) / (9 * h * h)
+            nondiagc = SD.c / (9 * hsqr)
+            diagc = -2 * nondiagc
 
-            nondiagc = SD.c / (9 * h * h)
+            values[1] += diagc
             push!(values, nondiagc, nondiagc)
             push!(offsets, V(3), V(-3))
         end
@@ -215,14 +226,12 @@ function get_Δ_format_IJV(::Type{T}, Grid::AG,
         count = size(offsets, 1)
         space_usage = count * length(submesh)
 
-        println(offsets, values)
 
         _I = zeros(Int64, space_usage) #row idx
         _J = zeros(Int64, space_usage) #column idx
         _V = repeat(values, length(submesh))
 
-        #@threads 
-        for idx in 1:length(submesh)
+        @threads for idx in 1:length(submesh)
             section = (count * (idx - 1) + 1):(count * idx)
             _I[section] .= idx
             _J[section] .= apply_offsets(submesh, idx, offsets)
@@ -241,21 +250,20 @@ function get_Δ_format_IJV(::Type{T}, Grid::AG,
     if N == 1
         return findnz(temp[1])
     elseif N == 2
-        Ix = sparse(T(1)I, sizes[2], sizes[2])
-        Iy = sparse(T(1)I, sizes[1], sizes[1])
+        Ix = I(sizes[2])
+        Iy = I(sizes[1])
         return findnz(kron(Iy, temp[2]) + kron(temp[1], Ix))
 
     elseif N == 3
-        Ix = sparse(T(1)I, sizes[3], sizes[3])
-        Iy = sparse(T(1)I, sizes[2], sizes[2])
-        Iz = sparse(T(1)I, sizes[1], sizes[1])
+        Ix = I(sizes[3])
+        Iy = I(sizes[2])
+        Iz = I(sizes[1])
         return findnz(kron(Iz, Iy, temp[3]) + kron(Iz, temp[2], Ix) +
                       kron(temp[1], Iy, Ix))
+    
     end
 end
 
-function get_D_format_IJV()
-end
 
-export SpaceDiscretization, get_A_format_IJV, get_Δ_format_IJV, check_validity,
+export SpaceDiscretization, get_A_format_IJV, get_D_format_IJV, check_validity,
        validate_positive_definite, validate_constraints, estimate_order

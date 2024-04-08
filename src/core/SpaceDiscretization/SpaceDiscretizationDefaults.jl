@@ -69,6 +69,6 @@ end
 
 unregister(sym::Symbol) = delete!(SpaceDiscretizationDefaults, sym)
 
-get_available_defaults() = keys(SpaceDiscretizationDefaults)
+get_available_defaults_sd() = keys(SpaceDiscretizationDefaults)
 
 export register, unregister, get_available_defaults

@@ -38,3 +38,5 @@ C}) where {T<:AbstractFloat,V<:Integer,C<:AbstractArray{T,1}} = (CompositionMeth
     
     return get_coefficient(CompositionMethod, index)
 end
+
+include("TimeDiscretizationDefaults.jl")
