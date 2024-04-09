@@ -1,13 +1,13 @@
 
 function time_discretization_ord_2(::Type{T},
                                    substeps::Int64,
-                                   index::Int64) where {T<:AbstractFloat}
+                                   index::Int64) where {T<:AbstractFloatOrRational}
     return ConstructSymmetricTimeCompositionMethod(2, 1, convert(Array{T}, [1.0]))
 end
 
 function time_discretization_ord_4(::Type{T},
                                    substeps::Int64,
-                                   index::Int64) where {T<:AbstractFloat}
+                                   index::Int64) where {T<:AbstractFloatOrRational}
     if substeps == 5 && index == 1
         γ₁ = (3.0 + sqrt(3.0)) / 6
         γ₂ = (3.0 - sqrt(3.0)) / 6
@@ -36,7 +36,7 @@ function time_discretization_ord_4(::Type{T},
 end
 
 function time_discretization_ord_6(::Type{T}, substeps::Int64,
-                                   index::Int64) where {T<:AbstractFloat}
+                                   index::Int64) where {T<:AbstractFloatOrRational}
     if substeps == 7 && index == 1
         γ₁ = 0.7845136104775572638
         γ₂ = 0.2355732133593581336
@@ -69,7 +69,7 @@ function time_discretization_ord_6(::Type{T}, substeps::Int64,
 end
 
 function time_discretization_ord_8(::Type{T}, substeps::Int64,
-                                   index::Int64) where {T<:AbstractFloat}
+                                   index::Int64) where {T<:AbstractFloatOrRational}
     if substeps == 15 && index == 1
         γ₁ = 0.74167036435061295345
         γ₂ = -0.40910082580003159400
@@ -149,9 +149,7 @@ function register(sym::Symbol, order::V, substeps::V,
 
     TimeCompositionMethodDefaults[sym] = ConstructSymmetricTimeCompositionMethod(Vtype(order),
                                                                                  Vtype(substeps),
-                                                                                 Vector{Rtype}(coefficients),
-                                                                                 Rtype(atol),
-                                                                                 Rtype(rtol))
+                                                                                 Vector{Rtype}(coefficients))
 end
 
 @inline unregister(::Type{TimeComposition}, sym::Symbol) = delete!(TimeCompositionMethodDefaults,
@@ -161,6 +159,6 @@ end
 
 @inline get_available(::Type{TimeComposition}) = keys(TimeCompositionMethodDefaults)
 
-@inline get(::Type{TimeComposition}, sym::Symbol) = get_time_composition(sym)
+@inline get_coefficients(::Type{TimeComposition}, sym::Symbol) = get_time_composition(sym)
 
 export register, unregister, get_available, get, get_time_composition

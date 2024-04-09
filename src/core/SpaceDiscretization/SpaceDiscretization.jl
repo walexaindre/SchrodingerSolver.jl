@@ -1,7 +1,6 @@
 
-function estimate_order(a::T, b::T, c::T, α::T, β::T, atol::T = 0,
-                        rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloatOrRational{Int}}
-    if !isapprox(a + b + c, 1 + 2 * (α + β); atol = atol, rtol = rtol)
+function estimate_order(a::T, b::T, c::T, α::T, β::T) where {T<:AbstractFloatOrRational{Int}}
+    if !isapprox(a + b + c, 1 + 2 * (α + β))
         return 0
     end
 
@@ -14,7 +13,7 @@ function estimate_order(a::T, b::T, c::T, α::T, β::T, atol::T = 0,
         left_side = a + pow2 * b + pow3 * c
         right_side = fact * (α + pow2 * β)
 
-        if !isapprox(left_side, right_side; atol = atol, rtol = rtol)
+        if !isapprox(left_side, right_side)
             return idx
         end
     end
@@ -22,8 +21,7 @@ function estimate_order(a::T, b::T, c::T, α::T, β::T, atol::T = 0,
     throw(ArgumentError("Order higher than 36... "))
 end
 
-function validate_constraints(a::T, b::T, c::T, α::T, β::T, order::V, atol::T = 0,
-                              rtol::T = atol == 0 ? atol : √eps(T)) where {V<:Integer,
+function validate_constraints(a::T, b::T, c::T, α::T, β::T, order::V) where {V<:Integer,
                                                                            T<:AbstractFloatOrRational{V}}
     if order < 2
         throw(ArgumentError("Order must be greater than 1 and even at space discretization => [ order = $order ]"))
@@ -33,7 +31,7 @@ function validate_constraints(a::T, b::T, c::T, α::T, β::T, order::V, atol::T 
         throw(ArgumentError("Order must be even at space discretization => [ order = $order ]"))
     end
 
-    if !isapprox(a + b + c, 1 + 2 * (α + β); atol = atol, rtol = rtol)
+    if !isapprox(a + b + c, 1 + 2 * (α + β))
         throw(ArgumentError("Constraint not satisfied => [ a + b + c - 1 - 2 * ( α + β ) = $(a + b + c - 1 - 2 * α - 2 * β) ] != 0"))
     end
 
@@ -46,21 +44,18 @@ function validate_constraints(a::T, b::T, c::T, α::T, β::T, order::V, atol::T 
         left_side = a + pow2 * b + pow3 * c
         right_side = fact * (α + pow2 * β)
 
-        if !isapprox(left_side, right_side; atol = atol, rtol = rtol)
+        if !isapprox(left_side, right_side)
             throw(ArgumentError("Constraint not satisfied => [ a + 2 ^ $idx * b + 3 ^ $idx * c -  ($(idx+2)!/$idx!)( α - 2 ^ $idx * β ) = $(abs(left_side-right_side)) ] !≈ 0"))
         end
     end
 end
 
-function validate_constraints(SpaceDiscretization::SecondDerivativeCoefficients{V,T},
-                              atol::T = 0,
-                              rtol::T = atol == 0 ? atol : √eps(T)) where {V<:Integer,
+function validate_constraints(SpaceDiscretization::SecondDerivativeCoefficients{V,T}) where {V<:Integer,
                                                                            T<:AbstractFloatOrRational{V}}
     return validate_constraints(SpaceDiscretization.a, SpaceDiscretization.b,
                                 SpaceDiscretization.c, SpaceDiscretization.α,
-                                SpaceDiscretization.β, SpaceDiscretization.order,
-                                atol,
-                                rtol)
+                                SpaceDiscretization.β, SpaceDiscretization.order
+                               )
 end
 
 function validate_positive_definite(α::T,
@@ -80,25 +75,21 @@ function validate_positive_definite(SpaceDiscretization::SecondDerivativeCoeffic
     validate_positive_definite(SpaceDiscretization.α, SpaceDiscretization.β)
 end
 
-function check_validity(SpaceDiscretization::SecondDerivativeCoefficients{V,T},
-                        atol::T = 0,
-                        rtol::T = atol == 0 ? atol : √eps(T)) where {T<:AbstractFloat,
+function check_validity(SpaceDiscretization::SecondDerivativeCoefficients{V,T}) where {T<:AbstractFloat,
                                                                      V<:Integer}
-    validate_constraints(SpaceDiscretization, atol, rtol)
+    validate_constraints(SpaceDiscretization)
     validate_positive_definite(SpaceDiscretization)
 end
 
-function check_validity(a::T, b::T, c::T, α::T, β::T, order::V, atol::T = 0,
-                        rtol::T = atol == 0 ? atol : √eps(T)) where {V<:Integer,
+function check_validity(a::T, b::T, c::T, α::T, β::T, order::V) where {V<:Integer,
                                                                      T<:AbstractFloatOrRational{V}}
-    validate_constraints(a, b, c, α, β, order, atol, rtol)
+    validate_constraints(a, b, c, α, β, order)
     validate_positive_definite(α, β)
 end
 
-function SpaceDiscretization(a::T, b::T, c::T, α::T, β::T, order::V, atol::T = T(0),
-                             rtol::T = atol == T(0) ? atol : T(√eps(T))) where {V<:Integer,
+function SpaceDiscretization(a::T, b::T, c::T, α::T, β::T, order::V) where {V<:Integer,
                                                                                 T<:AbstractFloatOrRational{V}}
-    check_validity(a, b, c, α, β, order, atol, rtol)
+    check_validity(a, b, c, α, β, order)
     return SecondDerivativeCoefficients{V,T}(a, b, c, α, β, order)
 end
 
@@ -109,7 +100,7 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
                                                 T<:AbstractFloatOrRational{V}}
 
     #Fetch discretization coefficients
-    SD = get(Order, SpaceDiscretizationDefaults, nothing)
+    SD = get(SpaceDiscretization,Order)
 
     if isnothing(SD)
         throw(ArgumentError("Order not found in SpaceDiscretizationDefaults..."))
@@ -186,7 +177,7 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
     temp::Array{SparseMatrixCSC{T,V},1} = []
 
     for (h, ord, submesh) in zip(Grid.h, Order, submeshes)
-        SD = get(SpaceDiscretizationDefaults, ord, nothing)
+        SD = get(SpaceDiscretization, ord)
 
         if isnothing(SD)
             throw(ArgumentError("Order not found in SpaceDiscretizationDefaults... Please use register function to add new orders."))

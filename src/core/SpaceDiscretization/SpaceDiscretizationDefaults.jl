@@ -72,8 +72,8 @@ end
 
 @inline get_available(::Type{SpaceDiscretization}) = keys(SpaceDiscretizationDefaults)
 
-@inline get_space_discretization(sym::Symbol) = SpaceDiscretizationDefaults[sym]
+@inline get_space_discretization(sym::Symbol) = get(SpaceDiscretizationDefaults, sym, nothing)
 
-@inline get(::Type{SpaceDiscretization}, sym::Symbol) = get_space_discretization(sym)
+@inline get_coefficients(::Type{SpaceDiscretization}, sym::Symbol) = get_space_discretization(sym)
 
 export register, unregister, get_available, get_space_discretization, get
