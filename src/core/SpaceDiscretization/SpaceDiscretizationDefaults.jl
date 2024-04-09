@@ -76,4 +76,4 @@ end
 
 @inline get_coefficients(::Type{SpaceDiscretization}, sym::Symbol) = get_space_discretization(sym)
 
-export register, unregister, get_available, get_space_discretization, get
+export register, unregister, get_available, get_space_discretization, get_coefficients

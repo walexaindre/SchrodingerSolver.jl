@@ -15,9 +15,9 @@ end
 
 function ConstructSymmetricTimeCompositionMethod(order::V, substeps::V,
                                                  coefficients::Array) where {V<:Integer,
-                                                                              T<:AbstractFloatOrRational{V},
-                                                                              Array<:AbstractArray{T,
-                                                                                                   1}}
+                                                                             T<:AbstractFloatOrRational{V},
+                                                                             Array<:AbstractArray{T,
+                                                                                                  1}}
     R = SymmetricTimeCompositionMethod(order, substeps, coefficients)
     check_coefficients(R)
     return R
@@ -37,8 +37,10 @@ C}) where {V<:Integer,T<:AbstractFloatOrRational{V},C<:AbstractArray{T,1}} = (Co
         end
     end
 
-    return CompositionMethod.coefficients[mod1(index,
-                                               length(CompositionMethod.coefficients))]
+    return CompositionMethod.coefficients[index >
+                                          length(CompositionMethod.coefficients) ?
+                                          CompositionMethod.substeps - index + 1 :
+                                          index]
 end
 
 include("TimeCompositionDefaults.jl")

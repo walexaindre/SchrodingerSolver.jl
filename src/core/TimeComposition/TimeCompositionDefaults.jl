@@ -161,4 +161,4 @@ end
 
 @inline get_coefficients(::Type{TimeComposition}, sym::Symbol) = get_time_composition(sym)
 
-export register, unregister, get_available, get, get_time_composition
+export register, unregister, get_available, get_coefficients, get_time_composition
