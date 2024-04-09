@@ -1,5 +1,6 @@
-AbstractFloatOrRational{V} = Union{AbstractFloat,Rational{V}} where {V<:Integer}
+abstract type SpaceDiscretization end
 
+AbstractFloatOrRational{V} = Union{AbstractFloat,Rational{V}} where {V<:Integer}
 
 struct SecondDerivativeCoefficients{V <: Integer,T <: AbstractFloatOrRational{V}}
     a::T
@@ -9,3 +10,5 @@ struct SecondDerivativeCoefficients{V <: Integer,T <: AbstractFloatOrRational{V}
     β::T
     order::V
 end
+
+export SecondDerivativeCoefficients, SpaceDiscretization

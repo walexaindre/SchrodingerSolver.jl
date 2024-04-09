@@ -67,8 +67,13 @@ function register(sym::Symbol, a::T, b::T, c::T, α::T, β::T,
                                                            Int(order))
 end
 
-unregister(sym::Symbol) = delete!(SpaceDiscretizationDefaults, sym)
+@inline unregister(::Type{SpaceDiscretization}, sym::Symbol) = delete!(SpaceDiscretizationDefaults,
+                                                                       sym)
 
-get_available_defaults_sd() = keys(SpaceDiscretizationDefaults)
+@inline get_available(::Type{SpaceDiscretization}) = keys(SpaceDiscretizationDefaults)
 
-export register, unregister, get_available_defaults
+@inline get_space_discretization(sym::Symbol) = SpaceDiscretizationDefaults[sym]
+
+@inline get(::Type{SpaceDiscretization}, sym::Symbol) = get_space_discretization(sym)
+
+export register, unregister, get_available, get_space_discretization, get
