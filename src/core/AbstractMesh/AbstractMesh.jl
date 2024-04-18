@@ -92,16 +92,63 @@ end
     return index
 end
 
-@inline function apply_offsets(A::PeriodicAbstractMesh{T,1},
-                               idx::T,
-                               offsets::Vector{T}) where {T<:Integer}
-    return [getindex(A, idx + offset) for offset in offsets]
-end
-
 @inline function extract_every_dimension(A::PeriodicAbstractMesh{T,N}) where {T<:Integer,
                                                                               N}
     return (PeriodicAbstractMesh(T, A.dims[idx]) for idx in 1:N)
 end
+
+
+@inline function core_circulant_matrix_format_IJV(col::Vec, offsets::VecO,
+                                                  AMesh::AM) where {Vt<:Integer,
+                                                                    VecO<:AbstractVector{Vt},
+                                                                    Vec<:AbstractVector,
+                                                                    AM<:AbstractMesh{Vt}}
+    if (length(col) != length(offsets))
+        throw(DimensionMismatch("The length of the column vector must be equal to the length of the offsets vector"))
+    end
+
+    sz = length(col) * length(AMesh)
+    sz_offset = length(offsets)
+
+    I = Vector{V}(undef, sz)
+    J = similar(I)
+    V = Vector{eltype(col)}(undef, sz)
+
+    @threads for idx in 1:length(Amesh)
+        b = sz_offset * idx
+        a = b - sz_offset + 1
+
+        pos_to_modify = a:b
+
+        I[pos_to_modify] .= apply_offsets(AMesh, idx, offsets)
+        J[pos_to_modify] .= idx
+        V[pos_to_modify] .= col
+    end
+
+    I, J, V
+end
+
+@inline function assembly_circulant_matrix_format_IJV(col::Vec, offsets_vector::VecO,
+                                                      AMesh::AM) where {Vt<:Integer,
+                                                                        VecO<:Vector{Vt},
+                                                                        Vec<:AbstractVector,
+                                                                        AM<:AbstractMesh{Vt}}
+    offsets = offset_generator(offsets_vector)
+
+    core_circulant_matrix_format_IJV(col, offsets, AMesh)
+end
+
+@inline function assembly_circulant_matrix_format_IJV(col::Vec, offsets_range::R,
+                                                      AMesh::AM) where {Vt<:Integer,
+                                                                        R<:AbstractRange{Vt},
+                                                                        Vec<:AbstractVector,
+                                                                        AM<:AbstractMesh{Vt}}
+    offsets = offset_generator(Vt, offsets_range)
+
+    core_circulant_matrix_format_IJV(col, offsets, AMesh)
+end
+
+export apply_offsets, offset_generator, extract_every_dimension,assembly_circulant_matrix_format_IJV,core_circulant_matrix_format_IJV
 
 #Conversions
 

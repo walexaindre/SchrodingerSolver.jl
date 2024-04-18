@@ -1,5 +1,6 @@
 abstract type SchrodingerPDE end
 
+"PDE component"
 struct SchrodingerPDEComponent{Tv,Fn,Hn}
     σ::Tv #Dispersion coefficient
     f::Fn 
@@ -7,9 +8,23 @@ struct SchrodingerPDEComponent{Tv,Fn,Hn}
 end
 
 
-
-struct SchrodingerPDEPolynomic{N,M,Tv,Comp<:SchrodingerPDEComponent{Tv}}
-    components::NTuple{M,Comp}
+"Generic handler for non polynomic potentials"
+struct SchrodingerPDENonPolynomic{N,Tv,MComp<:SchrodingerPDEComponent{Tv},Potential} <: SchrodingerPDE
+    boundaries::NTuple{N,NTuple{2,Tv}}
+    components::MComp
+    F::Potential
+    T::Tv
 end
 
-export SchrodingerPDE, SchrodingerPDEComponent, SchrodingerPDEPolynomic
+"Optimized structure for polynomical potentials"
+struct SchrodingerPDEPolynomic{N,Tv,MComp,Potential,Optimized} <: SchrodingerPDE
+    boundaries::NTuple{N,NTuple{2,Tv}}
+    components::MComp
+    F::Potential
+    N::Optimized
+    T::Tv
+end
+
+export SchrodingerPDE, SchrodingerPDEComponent, SchrodingerPDEPolynomic, SchrodingerPDENonPolynomic
+
+

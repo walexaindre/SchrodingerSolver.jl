@@ -32,14 +32,14 @@ C}) where {V<:Integer,T<:AbstractFloatOrRational{V},C<:AbstractArray{T,1}} = (Co
                                                 T<:AbstractFloatOrRational{V},
                                                 C<:AbstractArray{T,1}}
     @boundscheck begin
-        if !(1 <= index <= length(CompositionMethod))
-            throw(BoundsError(1:length(CompositionMethod), index))
+        if !(1 <= index <= CompositionMethod.substeps)
+            throw(BoundsError(1:CompositionMethod.substeps, index))
         end
     end
 
     return CompositionMethod.coefficients[index >
                                           length(CompositionMethod.coefficients) ?
-                                          CompositionMethod.substeps - index + 1 :
+                                          CompositionMethod.substeps + 1 - index :
                                           index]
 end
 

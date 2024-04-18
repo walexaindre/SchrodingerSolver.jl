@@ -1,5 +1,6 @@
 
-function estimate_order(a::T, b::T, c::T, α::T, β::T) where {T<:AbstractFloatOrRational{Int}}
+function estimate_order(a::T, b::T, c::T, α::T,
+                        β::T) where {T<:AbstractFloatOrRational{Int}}
     if !isapprox(a + b + c, 1 + 2 * (α + β))
         return 0
     end
@@ -21,8 +22,9 @@ function estimate_order(a::T, b::T, c::T, α::T, β::T) where {T<:AbstractFloatO
     throw(ArgumentError("Order higher than 36... "))
 end
 
-function validate_constraints(a::T, b::T, c::T, α::T, β::T, order::V) where {V<:Integer,
-                                                                           T<:AbstractFloatOrRational{V}}
+function validate_constraints(a::T, b::T, c::T, α::T, β::T,
+                              order::V) where {V<:Integer,
+                                               T<:AbstractFloatOrRational{V}}
     if order < 2
         throw(ArgumentError("Order must be greater than 1 and even at space discretization => [ order = $order ]"))
     end
@@ -51,11 +53,10 @@ function validate_constraints(a::T, b::T, c::T, α::T, β::T, order::V) where {V
 end
 
 function validate_constraints(SpaceDiscretization::SecondDerivativeCoefficients{V,T}) where {V<:Integer,
-                                                                           T<:AbstractFloatOrRational{V}}
+                                                                                             T<:AbstractFloatOrRational{V}}
     return validate_constraints(SpaceDiscretization.a, SpaceDiscretization.b,
                                 SpaceDiscretization.c, SpaceDiscretization.α,
-                                SpaceDiscretization.β, SpaceDiscretization.order
-                               )
+                                SpaceDiscretization.β, SpaceDiscretization.order)
 end
 
 function validate_positive_definite(α::T,
@@ -76,19 +77,21 @@ function validate_positive_definite(SpaceDiscretization::SecondDerivativeCoeffic
 end
 
 function check_validity(SpaceDiscretization::SecondDerivativeCoefficients{V,T}) where {T<:AbstractFloat,
-                                                                     V<:Integer}
+                                                                                       V<:Integer}
     validate_constraints(SpaceDiscretization)
     validate_positive_definite(SpaceDiscretization)
 end
 
-function check_validity(a::T, b::T, c::T, α::T, β::T, order::V) where {V<:Integer,
-                                                                     T<:AbstractFloatOrRational{V}}
+function check_validity(a::T, b::T, c::T, α::T, β::T,
+                        order::V) where {V<:Integer,
+                                         T<:AbstractFloatOrRational{V}}
     validate_constraints(a, b, c, α, β, order)
     validate_positive_definite(α, β)
 end
 
-function SpaceDiscretization(a::T, b::T, c::T, α::T, β::T, order::V) where {V<:Integer,
-                                                                                T<:AbstractFloatOrRational{V}}
+function SpaceDiscretization(a::T, b::T, c::T, α::T, β::T,
+                             order::V) where {V<:Integer,
+                                              T<:AbstractFloatOrRational{V}}
     check_validity(a, b, c, α, β, order)
     return SecondDerivativeCoefficients{V,T}(a, b, c, α, β, order)
 end
@@ -100,7 +103,7 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
                                                 T<:AbstractFloatOrRational{V}}
 
     #Fetch discretization coefficients
-    SD = get(SpaceDiscretization,Order)
+    SD = get_coefficients(SpaceDiscretization, Order)
 
     if isnothing(SD)
         throw(ArgumentError("Order not found in SpaceDiscretizationDefaults..."))
@@ -143,16 +146,14 @@ end
 
 function get_A_format_IJV(::Type{T}, Mesh::AM,
                           Order::NTuple{N,Symbol}) where {V<:Integer,
-                                                          AM<:AbstractMesh{V,1},
                                                           T<:AbstractFloatOrRational{V},
-                                                          N}
+                                                          N,AM<:AbstractMesh{V,N}}
 
     #Get individual dimensions
     submesh = extract_every_dimension(Mesh)
-
     #Get matrix for every sub mesh
-    _A = [sparse(get_A_format_IJV(T, submesh[idx], Order[idx])...,
-                 length(submesh[idx])) for idx in N:-1:1]
+    _A = [sparse(get_A_format_IJV(T, smesh, Order[idx])...,
+                 length(smesh),length(smesh)) for (smesh,idx) in zip(submesh,N:-1:1)]
     A = kron(_A...)
     #Get the IJV format of the matrix A
     findnz(A)
@@ -164,8 +165,7 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
                                                           AG<:AbstractGrid{NTuple{N,
                                                                                   T},
                                                                            N}}
-
-    if N>3
+    if N > 3
         throw(ArgumentError("Only 1D, 2D and 3D grids are supported..."))
     end
 
@@ -177,7 +177,7 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
     temp::Array{SparseMatrixCSC{T,V},1} = []
 
     for (h, ord, submesh) in zip(Grid.h, Order, submeshes)
-        SD = get(SpaceDiscretization, ord)
+        SD = get_coefficients(SpaceDiscretization, ord)
 
         if isnothing(SD)
             throw(ArgumentError("Order not found in SpaceDiscretizationDefaults... Please use register function to add new orders."))
@@ -217,7 +217,6 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
         count = size(offsets, 1)
         space_usage = count * length(submesh)
 
-
         _I = zeros(Int64, space_usage) #row idx
         _J = zeros(Int64, space_usage) #column idx
         _V = repeat(values, length(submesh))
@@ -251,10 +250,8 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
         Iz = I(sizes[1])
         return findnz(kron(Iz, Iy, temp[3]) + kron(Iz, temp[2], Ix) +
                       kron(temp[1], Iy, Ix))
-    
     end
 end
-
 
 export SpaceDiscretization, get_A_format_IJV, get_D_format_IJV, check_validity,
        validate_positive_definite, validate_constraints, estimate_order

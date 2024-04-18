@@ -46,10 +46,10 @@ function time_discretization_ord_6(::Type{T}, substeps::Int64,
                                                        convert(Array{T},
                                                                [γ₁, γ₂, γ₃, γ₄]))
     elseif substeps == 9 && index == 1
-        γ₁ = 0.186
-        γ₂ = 0.5554970237124783991
-        γ₃ = 0.1294669489134753580
-        γ₄ = -0.8432656233877346085
+        γ₁ = 0.1867
+        γ₂ = 0.55549702371247839916
+        γ₃ =  0.12946694891347535806
+        γ₄ = -0.84326562338773460855
         γ₅ = 1 - 2 * (γ₁ + γ₂ + γ₃ + γ₄)
         return ConstructSymmetricTimeCompositionMethod(6, 9,
                                                        convert(Array{T},

@@ -1,19 +1,10 @@
 using SchrodingerSolver
 
-rs = get_coefficients(TimeComposition,:tord6_9_1)
+mesh2d = PeriodicAbstractMesh(Int64, (10, 8))
 
-get_available(TimeComposition)
+A = get_A_format_IJV(Float64,mesh2d,(:ord2,:ord4))
 
 
-for i in 1:7
-    if i>4
-        println(8-i)
-    else
-        println(i)
-    end
-end
-
-for i in 1:7
-    println(mod1(8-i,4))
-end
+A = sparse(A...)
+drop(A,mesh2d,0.0001)
 
