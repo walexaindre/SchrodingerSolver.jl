@@ -61,3 +61,4 @@
 
 "Finish time for the Schrodinger PDE"
 @inline get_time_boundary(SPDE::SchrodingerPDENonPolynomic{N,Tv,MComp,Potential}) where {N,Tv,MComp,Potential} = SPDE.T
+
