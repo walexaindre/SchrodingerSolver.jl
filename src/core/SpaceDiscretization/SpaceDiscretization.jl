@@ -109,7 +109,7 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
         throw(ArgumentError("Order not found in SpaceDiscretizationDefaults..."))
     end
 
-    offsets = [V(0)]
+    offsets = zeros(V, 0)
 
     value = [one(T)]
 
@@ -117,26 +117,30 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
     sizehint!(value, 5)
 
     if !isapprox(SD.α, 0)
-        push!(offsets, V(1), V(-1))
-        push!(value, SD.α, -SD.α)
+        push!(offsets, V(1))
+        push!(value, SD.α, SD.α)
     end
 
     if !isapprox(SD.β, 0)
-        push!(offsets, V(2), V(-2))
-        push!(value, SD.β, -SD.β)
+        push!(offsets, V(2))
+        push!(value, SD.β, SD.β)
     end
 
-    count = size(offsets, 1)
+    count = size(value, 1)
     space_usage = count * length(Mesh)
 
     _I = zeros(V, space_usage) #row idx
     _J = zeros(V, space_usage) #column idx
     _V = repeat(value, length(Mesh))
+    
+    offsets = AssemblySymmetricOffset(UniqueZeroOffset, (offsets,))
+
 
     #Get the IJV format of the matrix A
     @threads for idx in 1:length(Mesh)
+
         _I[(count * (idx - 1) + 1):(count * idx)] .= idx
-        _J[(count * (idx - 1) + 1):(count * idx)] .= apply_offsets(Mesh, idx,
+        _J[(count * (idx - 1) + 1):(count * idx)] .= apply_offsets(Mesh, CartesianIndex(idx),
                                                                    offsets)
 
         #V[(count * (idx - 1) + 1):(count * idx)] .= value
@@ -152,8 +156,20 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
     #Get individual dimensions
     submesh = extract_every_dimension(Mesh)
     #Get matrix for every sub mesh
-    _A = [sparse(get_A_format_IJV(T, smesh, Order[idx])...,
-                 length(smesh),length(smesh)) for (smesh,idx) in zip(submesh,N:-1:1)]
+
+    _A = ntuple(ndims(Mesh)) do idx #This can have bugs easily... [TODO]
+
+        pos = N+1-idx
+
+        cmesh,_ = iterate(submesh,pos-1)
+        sz = length(cmesh)
+
+        _I,_J,_V = get_A_format_IJV(T, cmesh, Order[pos])
+
+        sparse(_I,_J,_V,sz,sz)
+    end
+
+    #Kronecker product of all matrices in reverse order...
     A = kron(_A...)
     #Get the IJV format of the matrix A
     findnz(A)

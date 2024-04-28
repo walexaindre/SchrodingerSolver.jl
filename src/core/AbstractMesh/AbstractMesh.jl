@@ -97,37 +97,6 @@ end
     return (PeriodicAbstractMesh(T, A.dims[idx]) for idx in 1:N)
 end
 
-
-@inline function core_circulant_matrix_format_IJV(col::Vec, offsets::VecO,
-                                                  AMesh::AM) where {Vt<:Integer,
-                                                                    VecO<:AbstractVector{Vt},
-                                                                    Vec<:AbstractVector,
-                                                                    AM<:AbstractMesh{Vt}}
-    if (length(col) != length(offsets))
-        throw(DimensionMismatch("The length of the column vector must be equal to the length of the offsets vector"))
-    end
-
-    sz = length(col) * length(AMesh)
-    sz_offset = length(offsets)
-
-    I = Vector{V}(undef, sz)
-    J = similar(I)
-    V = Vector{eltype(col)}(undef, sz)
-
-    @threads for idx in 1:length(Amesh)
-        b = sz_offset * idx
-        a = b - sz_offset + 1
-
-        pos_to_modify = a:b
-
-        I[pos_to_modify] .= apply_offsets(AMesh, idx, offsets)
-        J[pos_to_modify] .= idx
-        V[pos_to_modify] .= col
-    end
-
-    I, J, V
-end
-
 @inline function assembly_circulant_matrix_format_IJV(col::Vec, offsets_vector::VecO,
                                                       AMesh::AM) where {Vt<:Integer,
                                                                         VecO<:Vector{Vt},
@@ -148,9 +117,115 @@ end
     core_circulant_matrix_format_IJV(col, offsets, AMesh)
 end
 
-export apply_offsets, offset_generator, extract_every_dimension,assembly_circulant_matrix_format_IJV,core_circulant_matrix_format_IJV
+export apply_offsets, offset_generator, extract_every_dimension,
+       assembly_circulant_matrix_format_IJV, core_circulant_matrix_format_IJV
 
 #Conversions
 
 @inline PeriodicAbstractMesh(P::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N} = PeriodicAbstractMesh(V,
                                                                                                                                P.dims)
+################################################################################################
+
+"""
+    S = matrix_to_vector(M)
+
+Return the dense vector storage type `S` related to the dense matrix storage type `M`.
+"""
+function matrix_to_vector(::Type{M}) where {M<:DenseMatrix}
+    T = hasproperty(M, :body) ? M.body : M
+    par = T.parameters
+    npar = length(par)
+    (2 ≤ npar ≤ 3) || error("Type $M is not supported.")
+    if npar == 2
+        S = T.name.wrapper{par[1],1}
+    else
+        S = T.name.wrapper{par[1],1,par[3]}
+    end
+    return S
+end
+
+matrix_to_vector(::Type{M}) where {M<:AbstractCuSparseMatrix} = M.types[3]
+
+matrix_to_vector(::Type{M}) where M<:SparseMatrixCSC = M.types[5]
+
+
+
+"""
+    v = vundef(S, n)
+
+Create an uninitialized vector of storage type `S` of length `n`.
+"""
+vundef(S, n) = S(undef, n)
+
+
+"""
+    v = vzeros(S, n)
+
+Create a vector of storage type `S` of length `n` only composed of zero.
+"""
+vzeros(S, n) = fill!(S(undef, n), zero(eltype(S)))
+
+"""
+    v = vones(S, n)
+
+Create a vector of storage type `S` of length `n` only composed of one.
+"""
+vones(S, n) = fill!(S(undef, n), one(eltype(S)))
+
+"""
+    v = vcanonical(S, n, idx)
+
+Create a vector of storage type `S` of length `n` where the position `idx` is one and any other position is zero.
+"""
+function vcanonical(S, n, idx = 1)
+    v = vzeros(S, n)
+    v[idx:idx] .= 1
+    return v
+end
+
+"""
+    v = vseq(S, n)
+
+Create a vector of storage type `S` of length `n` where the position `i` is `i`.
+"""
+function vseq(S,n)
+    cumsum(vones(S,n))
+end
+
+"""
+    v = test_if_zero(V,idx)
+
+Return `true` if the element at position `idx` of the vector `V` is zero.
+"""
+function test_if_zero end
+
+
+function test_if_zero(Vec::GPUV,idx) where {GPUV<:CuVector}
+    CUDA.@allowscalar if Vec[idx] == zero(eltype(Vec))
+        return true
+    end
+    return false
+end
+
+function test_if_zero(Vec::GenV,idx) where {GenV<:AbstractVector}
+    if Vec[idx] == zero(eltype(Vec))
+        return true
+    end
+    return false
+end
+
+"""
+    v = vfirst(V)
+
+Return the first element of the vector `V`.
+"""
+function vfirst end
+
+function vfirst(Vec::GenV) where {GenV<:AbstractVector}
+    first(Vec)
+end
+
+
+function vfirst(Vec::GPUV) where {GPUV<:CuVector}
+    CUDA.@allowscalar first(Vec)
+end

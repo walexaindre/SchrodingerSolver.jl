@@ -79,3 +79,5 @@ end
 end
 
 @inline Base.convert(::Type{PeriodicAbstractMesh{V,N}}, A::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N} = PeriodicAbstractMesh(V,A.dims)
+
+

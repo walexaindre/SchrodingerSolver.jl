@@ -26,5 +26,3 @@ struct SchrodingerPDEPolynomic{N,Tv,MComp,Potential,Optimized} <: SchrodingerPDE
 end
 
 export SchrodingerPDE, SchrodingerPDEComponent, SchrodingerPDEPolynomic, SchrodingerPDENonPolynomic
-
-

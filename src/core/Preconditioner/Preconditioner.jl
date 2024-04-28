@@ -1,45 +1,91 @@
-function drop(M::Matrix, AMesh::AM, τ::Tv, offset_range::R = 0:2,
-              rtol::AbstractFloat = 700 * eps(real(eltype(M))),
-              atol::AbstractFloat = 700 * eps(real(eltype(M)))) where {V<:Integer,
-                                                                        Tv<:AbstractFloat,
-                                                                        R<:AbstractRange{V},
-                                                                        Matrix<:AbstractArray{Tv},
-                                                                        AM<:AbstractMesh{V}}
-    offsets = offset_generator(V, offset_range)
-    full_locations = apply_offsets(AMesh, 1, offsets)
+function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
+              rtol::TolT = 700 * eps(real(eltype(M))),
+              atol::TolT = 700 * eps(real(eltype(M)))) where {N,V<:Integer,
+                                                              Tv<:AbstractFloat,
+                                                              TolT<:AbstractFloat,
+                                                              RTup<:TupleOrRange{V},
+                                                              Matrix<:AbstractArray{Tv},
+                                                              AM<:AbstractMesh{V,N}}
+    if size(M, 1) != size(M, 2)
+        throw(DimensionMismatch("Matrix must be square"))
+    end
 
+    if size(M, 1) != length(AMesh)
+        throw(DimensionMismatch("Matrix size must be equal to the mesh size"))
+    end
+
+    if ndims(M) != 2
+        throw(DimensionMismatch("Matrix must be 2D"))
+    end
+
+    #Vector storage type
+    VecS = matrix_to_vector(Matrix)
+
+    #Generate first element of the mesh.
+    Ind = ntuple(Returns(1), N)
+
+    #Generate a list of offsets for given ranges.
+    offsets = offset_generator(UniqueZeroOffset, AMesh, offset_ranges)
+
+    #Apply offset list to first element (1,1,...,1) of the mesh.
+    one_idx_offset = apply_offsets(AMesh, Ind, offsets)
+
+    #Get the number of rows/cols of the matrix. (We assume here that M is square)
     rows = size(M, 1)
 
-    e₁ = zeros(eltype(M), rows)
-    e₁[1] .= 1
+    #Generate a vector with a 1 at the first position and zeros elsewhere.
+    e₁ = vcanonical(VecS, rows)
 
+    #Solve the system Mx = e₁
     col, _ = gmres(M, e₁; atol = atol, rtol = rtol)
 
     #Prune the inverse with the desired drop tolerance τ.
     bit_index = abs2.(col) .> τ
 
     #Get indexes of non pruned elements.
-    int_index = findall(bit_index) 
+    nonpruned_index = findall(bit_index)
 
-    #Undropped stencil positions.
-    undropped_stencil_positions = findall(in(int_index), full_locations)
+    #Undropped offset positions.
+    undropped_offset_positions = findall(in(nonpruned_index), one_idx_offset)
 
-    #Here the not eliminated entries are chosen.
-    used_stencil_idx = full_locations[undropped_stencil_positions]
+    #Infer offset values at used offset positions.
+    minimal_offset = infer_minimal_offsets(undropped_offset_positions, offsets)
+    minimal_index = apply_offsets(AMesh, Ind, minimal_offset)
 
-    nnz_stencil_positions = length(undropped_stencil_positions)
+    core_circulant_matrix_format_IJV(col[minimal_index], minimal_offset, AMesh)
+end
 
-    #Checking a_ij==a_ji this check is flawed. You need other interpretation for this... [TODO] rework this kind of validation
-    if 1:nnz_stencil_positions != undropped_stencil_positions
-        @warn "Problem with matrix entries (a_ij!=a_ji). Use a different drop tolerance..."
+function drop_kron()
+    (M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
+     rtol::TolT = 700 * eps(real(eltype(M))),
+     atol::TolT = 700 * eps(real(eltype(M)))) where {N,V<:Integer,
+                                                     Tv<:AbstractFloat,
+                                                     TolT<:AbstractFloat,
+                                                     RTup<:TupleOrRange{V},
+                                                     Matrix<:AbstractArray{Tv},
+                                                     AM<:AbstractMesh{V,N}}
+
+    if size(M, 1) != size(M, 2)
+        throw(DimensionMismatch("Matrix must be square"))
     end
 
-    #e₁ values at used stencil positions.
-    ê₁ = col[used_stencil_idx]
-    println(used_stencil_idx)
-    
-    #core_circulant_matrix_format_IJV(ê₁, undropped_stencil_positions, AMesh)
-    
+    if size(M, 1) != length(AMesh)
+        throw(DimensionMismatch("Matrix size must be equal to the mesh size"))
+    end
+
+    if ndims(M) != 2
+        throw(DimensionMismatch("Matrix must be 2D"))
+    end
+
+    #Vector storage type
+    VecS = matrix_to_vector(Matrix)
+
+    #Generate a list of offsets for given ranges.
+    offsets = offset_generator(UniqueZeroOffset, AMesh, offset_ranges)
+
+    #TODO
+
+    error("Not implemented yet")
 end
 
 export drop
