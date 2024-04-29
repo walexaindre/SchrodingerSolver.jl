@@ -9,7 +9,7 @@ end
 
 
 "Generic handler for non polynomic potentials"
-struct SchrodingerPDENonPolynomic{N,Tv,MComp<:SchrodingerPDEComponent{Tv},Potential} <: SchrodingerPDE
+struct SchrodingerPDENonPolynomic{N,Tv,MComp,Potential} <: SchrodingerPDE
     boundaries::NTuple{N,NTuple{2,Tv}}
     components::MComp
     F::Potential

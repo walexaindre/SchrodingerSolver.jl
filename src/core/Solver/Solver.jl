@@ -22,7 +22,8 @@ end
 """
 function step! end
 
-function update_component!()
+function update_component!(SP::SchrodingerProblem{PDEq,SolverConf,Storage,Statistics},component_index::IntType,σ::FloatType) where {IntType,FloatType,PDEq,SolverConf,Storage,Statistics}
+
 end
 
 function step!(SP::SchrodingerProblem{PDEq,SolverConf,Storage,Statistics}) where {PDEq,SolverConf,Storage,Statistics}
@@ -33,16 +34,19 @@ function step!(SP::SchrodingerProblem{PDEq,SolverConf,Storage,Statistics}) where
     for τ in 1:3
         #Forward
         for (component_index, σ) in enumerate(σ_forward)
-            update_component!()
+            update_component!(SP,component_index,σ)
         end
         #Backward
 
         for (component_index,σ) in zip(length(σ_backward):-1:1,σ_backward)
-            update_component!()
+            update_component!(SP,component_index,σ)
         end
     end
     
 
     workt_time = time() - start_time
-    
+    update_stats!(SP.Stats,workt_time,SP.PDE,SP.Config.method.Grid,SP.Memory,SP.Config.stop_criteria)
 end
+
+
+

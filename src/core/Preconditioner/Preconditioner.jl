@@ -55,8 +55,7 @@ function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
     core_circulant_matrix_format_IJV(col[minimal_index], minimal_offset, AMesh)
 end
 
-function drop_kron()
-    (M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
+function drop_kron(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
      rtol::TolT = 700 * eps(real(eltype(M))),
      atol::TolT = 700 * eps(real(eltype(M)))) where {N,V<:Integer,
                                                      Tv<:AbstractFloat,

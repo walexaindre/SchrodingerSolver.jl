@@ -21,8 +21,6 @@ end
 struct DirectLinearSolver
 end
 
-
-
 struct SolverConfig{N,IntType,FloatType,Backend,Method,LinearSolver,StoppingCriteria}
     time_order::Symbol
     space_order::NTuple{N,Symbol}
@@ -42,12 +40,10 @@ struct SolverConfig{N,IntType,FloatType,Backend,Method,LinearSolver,StoppingCrit
     
     output_folder::String
 
-    OpA
-    PreA
-
     stats::Tuple{Bool,IntType}
     debug::Tuple{Bool,IntType,IntType}
 end
+
 
 struct SchrodingerProblem{PDEq,SolverConf,Storage,Statistics}
     PDE::PDEq
@@ -55,3 +51,6 @@ struct SchrodingerProblem{PDEq,SolverConf,Storage,Statistics}
     Memory::Storage
     Stats::Statistics
 end
+
+
+export SchrodingerProblem, SolverConfig, DirectLinearSolver, IterativeLinearSolver, NormBased, FixedSteps

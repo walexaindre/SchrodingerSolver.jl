@@ -1,7 +1,6 @@
-function initialize_stats(::Type{IntType},::Type{FloatType},::Type{ArrayType},freq,time_steps)
-    seq = 1:freq:time_steps
+function initialize_stats(::Type{IntType},::Type{FloatType},::Type{VectorType},freq,time_steps) where {IntType<:Integer,FloatType<:AbstractFloat,VectorType<:AbstractArray{FloatType}}
 
-    sys_energy = vzeros(ArrayType{FloatType,1},length(seq))
+    sys_energy = vzeros(VectorType,length(seq))
     sys_power = similar(sys_energy)
     sys_time = similar(sys_energy)
     
@@ -14,16 +13,38 @@ function initialize_stats(::Type{IntType},::Type{FloatType},::Type{ArrayType},fr
 end
 
 @inline function system_power(Grid, Memory)
-    get_measure(Grid) * vec(sum(abs2.(Memory.current_state), dims = 1))
+    measure(Grid) * vec(sum(abs2.(Memory.current_state), dims = 1))
 end
 
-@inline function system_energy(Opt,Memory)
+@inline function system_energy(PDE,Mem,ItStop)
+    preA = Mem.preA
+    A = Mem.opA
+    D = Mem.opD
+    σ_collection =  get_σ(PDE)
+
+    for (comp,σ) in enumerate(σ_collection)
+        @views comp = components[:, idx]
+        b = D * comp
+
+        gmres!(Memory.solver_memory,
+            A,
+            b,
+            restart = true,
+            N = preA,
+            atol = ItStop.atol,
+            rtol = ItStop.rtol)
+
+        energy -= σ * dot(comp, Memory.solver_memory.x)
+    end
 
 end
 
-function update_stats(stats::Stats,memory) where {Stats<:RuntimeStats}
-
-
-    
+function update_stats!(stats::Stats,time,PDE,Grid,Mem,ItStop) where {Stats<:RuntimeStats}
     stats.current_iter+=stats.step
+
+    idx  = div(stats.current_iter-stats.first,stats.step)+1
+
+    stats.step_time[idx]=time
+    stats.system_power[idx] = system_power(Grid, Mem)
+    stats.system_energy[idx] = system_energy(PDE,Mem,ItStop)
 end
