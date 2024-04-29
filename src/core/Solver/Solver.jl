@@ -21,3 +21,28 @@ end
 
 """
 function step! end
+
+function update_component!()
+end
+
+function step!(SP::SchrodingerProblem{PDEq,SolverConf,Storage,Statistics}) where {PDEq,SolverConf,Storage,Statistics}
+
+    σ_forward = get_σ(SP.PDE)
+    σ_backward = reverse(σ_forward)
+    start_time = time()
+    for τ in 1:3
+        #Forward
+        for (component_index, σ) in enumerate(σ_forward)
+            update_component!()
+        end
+        #Backward
+
+        for (component_index,σ) in zip(length(σ_backward):-1:1,σ_backward)
+            update_component!()
+        end
+    end
+    
+
+    workt_time = time() - start_time
+    
+end

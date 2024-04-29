@@ -4,5 +4,9 @@ mutable struct RuntimeStats{IntType,FloatType,ArrayType} <: AbstractStats{ArrayT
     const system_energy::ArrayType{FloatType,1}
     const system_power::ArrayType{FloatType,1}
     const step_time::ArrayType{FloatType,1}
+    const first::IntType
+    const last::IntType
+    const step::IntType
+
     current_iter::IntType
 end

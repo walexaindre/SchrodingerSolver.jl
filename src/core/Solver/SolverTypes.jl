@@ -21,14 +21,14 @@ end
 struct DirectLinearSolver
 end
 
-abstract type AbstractSolverMethod end
 
-struct PaulMethod end
 
-struct SolverConfig{N,IntType,FloatType,Backend,LinearSolver,StoppingCriteria}
+struct SolverConfig{N,IntType,FloatType,Backend,Method,LinearSolver,StoppingCriteria}
     time_order::Symbol
     space_order::NTuple{N,Symbol}
     backend_type::Type{Backend}
+
+    method::Method
 
     verbose::IntType
 
@@ -42,6 +42,16 @@ struct SolverConfig{N,IntType,FloatType,Backend,LinearSolver,StoppingCriteria}
     
     output_folder::String
 
+    OpA
+    PreA
+
     stats::Tuple{Bool,IntType}
     debug::Tuple{Bool,IntType,IntType}
+end
+
+struct SchrodingerProblem{PDEq,SolverConf,Storage,Statistics}
+    PDE::PDEq
+    Config::SolverConf
+    Memory::Storage
+    Stats::Statistics
 end
