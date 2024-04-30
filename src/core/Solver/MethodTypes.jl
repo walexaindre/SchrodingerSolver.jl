@@ -29,9 +29,8 @@ struct Kernel{LinOp1,LinOp2,LinOp3}
     opC::LinOp3
 end
 
-struct PaulMethod{IntType,FloatType,Grid,TKernel,ItSolver,StoppingCriteria,ItSolver2}
+struct PaulMethod{FloatType,Grid,TKernel,ItSolver,StoppingCriteria,ItSolver2}
     Mesh::Grid
-    Connections::Dictionary{Tuple{FloatType,FloatType},IntType}
     Kernel::TKernel
     linear_solve_params::ItSolver
     stopping_criteria::StoppingCriteria

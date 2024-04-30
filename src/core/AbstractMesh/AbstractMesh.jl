@@ -229,3 +229,18 @@ end
 function vfirst(Vec::GPUV) where {GPUV<:CuVector}
     CUDA.@allowscalar first(Vec)
 end
+
+"""
+    v = vlast(V)
+
+Return the last element of the vector `V`.
+"""
+function vlast end
+
+function vlast(Vec::GenV) where {GenV<:AbstractVector}
+    last(Vec)
+end
+
+function vlast(Vec::GPUV) where {GPUV<:CuVector}
+    CUDA.@allowscalar last(Vec)
+end

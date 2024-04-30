@@ -1,6 +1,6 @@
 
 
-struct SolverConfig{N,IntType,FloatType,Backend}
+struct SolverConfig{N,IntType,Backend}
     time_order::Symbol
     space_order::NTuple{N,Symbol}
     backend_type::Type{Backend}

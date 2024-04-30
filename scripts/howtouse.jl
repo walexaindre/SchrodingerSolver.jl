@@ -27,8 +27,13 @@ end
 
 PDE = SchrodingerPDENonPolynomic(((1.0,2.0),(1.0,2.0)),(C1,C2,C3),F,1.0)
 
-Mesh = PeriodicGrid(Int64,Float64,0.05,1:0.1:2,1:0.1:2)
+Mesh = PeriodicGrid(CPUBackendF64,PDE,1.0,(100,100))
 
-Problem = SchrodingerProblem(PDE,DefaultSolver(2),Mesh)
+Params = DefaultSolver(CPUBackendF64,2)
 
-step!(Problem)
+Method = PaulMethod1(CPUBackendF64,PDE,Mesh,Params)
+
+#Problem = SchrodingerProblem(PDE,DefaultSolver(2),Mesh)
+
+#step!(Problem)
+

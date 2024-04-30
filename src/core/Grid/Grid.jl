@@ -35,15 +35,15 @@
                                                                                                                              τ,
                                                                                                                              ranges)
 
-@inline function PeriodicGrid(::Type{V}, ::Type{T}, τ::T, N::NTuple{_N,T},
+@inline function PeriodicGrid(::Type{V}, ::Type{T}, τ::T, N::NTuple{_N,V},
                               boundaries::NTuple{_N,Tuple{T,T}}) where {V<:Integer,
                                                                         T<:Real,_N}
     ranges = Tuple(range_start_stop_length(boundaries[idx], N[idx]) for idx in 1:_N)
-    dims = Tuple(size(ranges[idx], 1) for idx in 1:N)
+    dims = Tuple(size(ranges[idx], 1) for idx in 1:_N)
 
     return PeriodicGrid(ranges,
                         dims,
-                        h,
+                        range_length.(ranges),
                         τ)
 end
 

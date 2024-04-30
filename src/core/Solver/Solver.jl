@@ -59,3 +59,6 @@ function step!(SP::SchrodingerProblem{PDEq,SolverConf,Storage,Statistics}) where
     update_stats!(SP.Stats, workt_time, SP.PDE, SP.Config.method.Grid, SP.Memory,
                   SP.Config.stop_criteria)
 end
+
+
+export DefaultSolver

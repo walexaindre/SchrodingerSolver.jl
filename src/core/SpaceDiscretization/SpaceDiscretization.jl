@@ -240,7 +240,7 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
         @threads for idx in 1:length(submesh)
             section = (count * (idx - 1) + 1):(count * idx)
             _I[section] .= idx
-            _J[section] .= apply_offsets(submesh, idx, offsets)
+            _J[section] .= apply_offsets(submesh, CartesianIndex(idx), offsets)
         end
         push!(temp, sparse(_I, _J, _V))
     end

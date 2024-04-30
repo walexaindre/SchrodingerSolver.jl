@@ -43,4 +43,11 @@ C}) where {V<:Integer,T<:AbstractFloatOrRational{V},C<:AbstractArray{T,1}} = (Co
                                           index]
 end
 
+@inline function coefficients(CompositionMethod::SymmetricTimeCompositionMethod{V,T,
+                                                                               C}) where {V<:Integer,
+                                                                                          T<:AbstractFloatOrRational{V},
+                                                                                          C<:AbstractArray{T,1}}
+    return CompositionMethod.coefficients
+end
+
 include("TimeCompositionDefaults.jl")
