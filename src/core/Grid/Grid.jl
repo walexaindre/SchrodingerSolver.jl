@@ -10,7 +10,11 @@
 @inline range_start_step_stop(start, step, stop) = start:step:stop
 @inline range_start_stop_step(start, stop, step) = start:step:stop
 @inline range_start_stop_step(start_stop, step) = start_stop[1]:step:start_stop[2]
-@inline range_start_stop_length(start, stop, length) = range(start, stop; length=length)
+@inline range_start_stop_length(start, stop, length) = range(start, stop;
+                                                             length = length)
+@inline range_start_stop_length(start_stop, length) = range(start_stop[1],
+                                                            start_stop[2];
+                                                            length = length)
 @inline range_length(rank) = Base.step(rank)
 
 ################################################################################################
@@ -31,8 +35,21 @@
                                                                                                                              τ,
                                                                                                                              ranges)
 
+@inline function PeriodicGrid(::Type{V}, ::Type{T}, τ::T, N::NTuple{_N,T},
+                              boundaries::NTuple{_N,Tuple{T,T}}) where {V<:Integer,
+                                                                        T<:Real,_N}
+    ranges = Tuple(range_start_stop_length(boundaries[idx], N[idx]) for idx in 1:_N)
+    dims = Tuple(size(ranges[idx], 1) for idx in 1:N)
+
+    return PeriodicGrid(ranges,
+                        dims,
+                        h,
+                        τ)
+end
+
 @inline function PeriodicGrid(::Type{V}, ::Type{T}, τ::T, h::NTuple{N,T},
-                              boundaries::NTuple{N,Tuple{T,T}}) where {V<:Integer,T<:Real,N}
+                              boundaries::NTuple{N,Tuple{T,T}}) where {V<:Integer,
+                                                                       T<:Real,N}
     ranges = Tuple(range_start_stop_step(boundaries[idx], h[idx]) for idx in 1:N)
     dims = Tuple(size(ranges[idx], 1) for idx in 1:N)
 
@@ -42,14 +59,24 @@
                         τ)
 end
 
+@inline PeriodicGrid(::Type{ComputeBackend}, PDE::PDEeq, τ::FloatType, h::NTuple{N,FloatType}) where {N,IntType,FloatType,PDEeq<:SchrodingerPDE{N,FloatType},ComputeBackend<:AbstractBackend{IntType,FloatType}} = PeriodicGrid(IntType,
+                                                                                                                                                                                                                                FloatType,
+                                                                                                                                                                                                                                τ,
+                                                                                                                                                                                                                                h,
+                                                                                                                                                                                                                                PDE.boundaries)
+
+@inline PeriodicGrid(::Type{ComputeBackend}, PDE::PDEeq, τ::FloatType, N::NTuple{_N,IntType}) where {_N,IntType,FloatType,PDEeq<:SchrodingerPDE{_N,FloatType},ComputeBackend<:AbstractBackend{IntType,FloatType}} = PeriodicGrid(IntType,
+                                                                                                                                                                                                                                 FloatType,
+                                                                                                                                                                                                                                 τ,
+                                                                                                                                                                                                                                 N,
+                                                                                                                                                                                                                                 PDE.boundaries)
+
 @inline PeriodicGrid(::Type{V}, ::Type{T}, τ::T, h::NTuple{N,T}, boundaries::Tuple{T,T}...) where {V<:Integer,T<:Real,N} = PeriodicGrid(V,
                                                                                                                                         T,
                                                                                                                                         τ,
                                                                                                                                         h,
                                                                                                                                         boundaries)
 
-
-                                                                                                                                        
 @inline function Base.getindex(A::PeriodicGrid{V,T,R,N},
                                I::Vararg{V,N}) where {V<:Integer,T<:Real,
                                                       R<:AbstractRange{T},N}
@@ -57,9 +84,9 @@ end
     @inbounds getindex.(A.ranges, mod1.(I, A.dims))
 end
 
-
 @inline function Base.getindex(A::PeriodicGrid{V,T,R,N}, ::Colon,
-                               col::V) where {V<:Integer,T<:Real,R<:AbstractRange{T},N}
+                               col::V) where {V<:Integer,T<:Real,R<:AbstractRange{T},
+                                              N}
     @boundscheck begin
         if !(1 <= col <= N)
             throw(BoundsError(A, (:, col)))
@@ -75,9 +102,10 @@ end
     inner_elems = prod(size(A)[left_slice])
     outer_elems = prod(size(A)[right_slice])
 
-    return repeat(A.ranges[col]; inner=inner_elems, outer=outer_elems)
+    return repeat(A.ranges[col]; inner = inner_elems, outer = outer_elems)
 end
 
-@inline Base.convert(::Type{PeriodicAbstractMesh{V,N}}, A::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N} = PeriodicAbstractMesh(V,A.dims)
+@inline Base.convert(::Type{PeriodicAbstractMesh{V,N}}, A::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N} = PeriodicAbstractMesh(V,
+                                                                                                                                                          A.dims)
 
 @inline measure(A::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N} = prod(A.h)

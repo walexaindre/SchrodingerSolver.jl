@@ -1,4 +1,4 @@
-abstract type SchrodingerPDE end
+abstract type SchrodingerPDE{N,FloatType} end
 
 "PDE component"
 struct SchrodingerPDEComponent{Tv,Fn,Hn}
@@ -9,7 +9,7 @@ end
 
 
 "Generic handler for non polynomic potentials"
-struct SchrodingerPDENonPolynomic{N,Tv,MComp,Potential} <: SchrodingerPDE
+struct SchrodingerPDENonPolynomic{N,Tv,MComp,Potential} <: SchrodingerPDE{N,Tv}
     boundaries::NTuple{N,NTuple{2,Tv}}
     components::MComp
     F::Potential
@@ -17,7 +17,7 @@ struct SchrodingerPDENonPolynomic{N,Tv,MComp,Potential} <: SchrodingerPDE
 end
 
 "Optimized structure for polynomical potentials"
-struct SchrodingerPDEPolynomic{N,Tv,MComp,Potential,Optimized} <: SchrodingerPDE
+struct SchrodingerPDEPolynomic{N,Tv,MComp,Potential,Optimized} <: SchrodingerPDE{N,Tv}
     boundaries::NTuple{N,NTuple{2,Tv}}
     components::MComp
     F::Potential
