@@ -4,9 +4,9 @@ using SparseArrays
 using CUDA
 CUDA.allowscalar(false)
 
-A = AssemblySymmetricOffset(UniqueZeroOffset, (1:3,))
+A = AssemblySymmetricOffset(UniqueZeroOffset, (1:3,1:2))
 
-PA = PeriodicAbstractMesh(Int, (36,))
+PA = PeriodicAbstractMesh(Int, (9,8))
 
 I = (1, 1)
 

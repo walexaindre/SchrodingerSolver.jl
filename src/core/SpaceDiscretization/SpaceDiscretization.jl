@@ -200,7 +200,7 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
         end
 
         values = [zero(T)]
-        offsets = [V(0)]
+        offsets = zeros(V, 0)
         hsqr = h^2
 
         if !isapprox(SD.a, 0)
@@ -209,7 +209,7 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
 
             values[1] += diaga
             push!(values, nondiaga, nondiaga)
-            push!(offsets, V(1), V(-1))
+            push!(offsets, V(1))
         end
 
         if !isapprox(SD.b, 0)
@@ -218,7 +218,7 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
 
             values[1] += diagb
             push!(values, nondiagb, nondiagb)
-            push!(offsets, V(2), V(-2))
+            push!(offsets, V(2))
         end
 
         if !isapprox(SD.c, 0)
@@ -230,8 +230,10 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
             push!(offsets, V(3), V(-3))
         end
 
-        count = size(offsets, 1)
+        count = size(values, 1)
         space_usage = count * length(submesh)
+
+        sym_offsets = AssemblySymmetricOffset(UniqueZeroOffset, (offsets,))
 
         _I = zeros(Int64, space_usage) #row idx
         _J = zeros(Int64, space_usage) #column idx
@@ -240,7 +242,7 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
         @threads for idx in 1:length(submesh)
             section = (count * (idx - 1) + 1):(count * idx)
             _I[section] .= idx
-            _J[section] .= apply_offsets(submesh, CartesianIndex(idx), offsets)
+            _J[section] .= apply_offsets(submesh, CartesianIndex(idx), sym_offsets)
         end
         push!(temp, sparse(_I, _J, _V))
     end
