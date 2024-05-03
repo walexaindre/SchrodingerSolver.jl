@@ -1,7 +1,7 @@
-function initialize_stats(::Type{IntType},::Type{FloatType},::Type{VectorType},freq,time_steps) where {IntType<:Integer,FloatType<:AbstractFloat,VectorType<:AbstractArray{FloatType}}
+function initialize_stats(::Type{IntType},::Type{FloatType},::Type{VectorType},ncomponents,freq,seq) where {IntType<:Integer,FloatType<:AbstractFloat,VectorType<:AbstractArray{FloatType}}
 
     sys_energy = vzeros(VectorType,length(seq))
-    sys_power = similar(sys_energy)
+    sys_power = ntuple(Returns(ComponentPower(similar(sys_energy))),ncomponents)
     sys_time = similar(sys_energy)
     
     first_v = IntType(first(seq))
@@ -39,12 +39,22 @@ end
 
 end
 
+function update_power!(stats::Stats,power,idx::IntType) where {IntType<:Integer,FloatType<:AbstractFloat,Stats<:RuntimeStats{IntType,FloatType}}
+    for comp in 1:length(stats.system_power)
+        stats.system_power[comp][idx] = power[comp]
+    end
+end
+
+function update_system_energy!(stats::Stats,energy::FloatType,idx::IntType) where {IntType<:Integer,FloatType<:AbstractFloat,Stats<:RuntimeStats{IntType,FloatType}}
+    stats.system_energy[idx] = energy
+end
+
 function update_stats!(stats::Stats,time,PDE,Grid,Mem,ItStop) where {Stats<:RuntimeStats}
     stats.current_iter+=stats.step
 
     idx  = div(stats.current_iter-stats.first,stats.step)+1
 
     stats.step_time[idx]=time
-    stats.system_power[idx] = system_power(Grid, Mem)
-    stats.system_energy[idx] = system_energy(PDE,Mem,ItStop)
+    update_power!(stats,system_power(Grid,Mem),idx)
+    update_system_energy!(stats,system_energy(PDE,Mem,ItStop),idx)
 end

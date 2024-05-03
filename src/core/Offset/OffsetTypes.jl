@@ -29,3 +29,6 @@ struct SymmetricOffset{V<:Integer,N,OffsetTuple}
 end
 
 export Offset, BaseOffset, SymmetricOffset, AllZeroOffset, UniqueZeroOffset
+
+include("OffsetTypesrevamp.jl")
+include("Offsetrevamp.jl")
