@@ -189,8 +189,8 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
     V = typeof(Mesh.dims[1])
     submeshes = extract_every_dimension(Mesh)
 
-    #Type is needed for compiler inference
-    temp::Array{SparseMatrixCSC{T,V},1} = []
+    temp = Vector{SparseMatrixCSC{T,V}}(undef, 0)
+    temp_A = Vector{SparseMatrixCSC{T,V}}(undef, 0)
 
     for (h, ord, submesh) in zip(Grid.h, Order, submeshes)
         SD = get_coefficients(SpaceDiscretization, ord)
@@ -239,17 +239,18 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
         _J = zeros(Int64, space_usage) #column idx
         _V = repeat(values, length(submesh))
 
-        @threads for idx in 1:length(submesh)
+        #@threads 
+        for idx in 1:length(submesh)
             section = (count * (idx - 1) + 1):(count * idx)
             _I[section] .= idx
             _J[section] .= apply_offsets(submesh, CartesianIndex(idx), sym_offsets)
         end
         push!(temp, sparse(_I, _J, _V))
+        AI,AJ,AV = get_A_format_IJV(T, submesh, ord)
+        push!(temp_A,sparse(AI,AJ,AV))
     end
 
     reverse!(temp)
-
-    sizes = [size(temp[idx], 1) for idx in 1:N]
 
     #1D Dx
     #2D => kron(Iy, Dx) + kron(Dy, Ix)
@@ -258,16 +259,16 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
     if N == 1
         return findnz(temp[1])
     elseif N == 2
-        Ix = I(sizes[2])
-        Iy = I(sizes[1])
-        return findnz(kron(Iy, temp[2]) + kron(temp[1], Ix))
+        Ax = temp_A[2]
+        Ay = temp_A[1]
+        return findnz(kron(Ay, temp[2]) + kron(temp[1], Ax))
 
     elseif N == 3
-        Ix = I(sizes[3])
-        Iy = I(sizes[2])
-        Iz = I(sizes[1])
-        return findnz(kron(Iz, Iy, temp[3]) + kron(Iz, temp[2], Ix) +
-                      kron(temp[1], Iy, Ix))
+        Ax = temp_A[3]
+        Ay = temp_A[2]
+        Az = temp_A[1]
+        return findnz(kron(Az, Ay, temp[3]) + kron(Az, temp[2], Ax) +
+                      kron(temp[1], Ay, Ax))
     end
 end
 
