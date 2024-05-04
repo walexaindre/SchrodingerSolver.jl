@@ -1,12 +1,15 @@
 using SchrodingerSolver
 using BenchmarkTools
 using SparseArrays
+using GLMakie
 using CUDA
 CUDA.allowscalar(false)
 
-A = AssemblySymmetricOffset(UniqueZeroOffset, (1:3,1:2))
+A = AssemblySymmetricOffset(UniqueZeroOffset, (1:2,1:2))
 
-PA = PeriodicAbstractMesh(Int, (9,8))
+PA = PeriodicAbstractMesh(Int, (8,8))
+Grid = PeriodicGrid(Int,Float64,1.0,(1:0.5:4,1:0.5:4))
+
 
 I = (1, 1)
 
@@ -54,9 +57,40 @@ end
 
 
 
-AI,AJ,AV = get_A_format_IJV(Float64, PA, (:ord8))
+AI,AJ,AV = get_A_format_IJV(Float64, PA, (:ord4))
+
+DI,DJ,DV = get_D_format_IJV(Float64, Grid, (:ord4,:ord4))
+
+sparsitypattern(DI,DJ,DV)
+
+
 Z=sparse(AI,AJ,AV)
 BI,BJ,BV = drop(Z,PA,0.000001)
-
-sparsitypattern(BI,BJ,BV)
 sparsitypattern(AI,AJ,AV)
+f=Figure(size=(800,800))
+MA = sparse(AI,AJ,AV)
+kron(MA,MA)
+ax = Axis(f[1,1])
+hidedecorations!(ax)
+hidespines!(ax)
+sparsitypattern(BI,BJ,BV)
+sparsitypattern!(ax,AI,AJ,AV,colormap=:magma)
+
+save("sparsitypattern.png",f)
+
+rows = Vector{Int}(undef, 0)
+cols = Vector{Int}(undef, 0)
+vals = Vector{Float64}(undef, 0)
+idx = 1
+sizehint!(rows, length(PA)*length(A))
+sizehint!(cols, length(PA)*length(A))
+sizehint!(vals, length(PA)*length(A))
+for i in  CartesianIndices(PA)
+    res = apply_offsets(PA,i,A)
+    append!(rows,res)
+    append!(cols,fill(idx,length(res)))
+    append!(vals,fill(1.0,length(res)))
+    idx+=1
+end
+f
+sparsitypattern(rows,cols,vals)

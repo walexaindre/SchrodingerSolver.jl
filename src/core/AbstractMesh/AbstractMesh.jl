@@ -73,25 +73,6 @@ end
     return out
 end
 
-@inline function getindex2(A::PeriodicAbstractMesh{T,N},
-                           I::Vararg{T,N}) where {T<:Integer,N}
-    index = mod1(I[1], A.dims[1])
-    @simd for i in 2:N
-        @inbounds index += (mod1(I[i], A.dims[i]) - 1) * A.multiplied_dims[i - 1]
-    end
-    return index
-end
-
-@inline function getindex3(A::PeriodicAbstractMesh{T,N},
-                           I::Vararg{T,N}) where {T<:Integer,N}
-    I = @. mod1(I, A.dims)
-    index = I[1]
-    @simd for i in 2:N
-        @inbounds index += (I[i] - 1) * A.multiplied_dims[i - 1]
-    end
-    return index
-end
-
 @inline function extract_every_dimension(A::PeriodicAbstractMesh{T,N}) where {T<:Integer,
                                                                               N}
     return (PeriodicAbstractMesh(T, A.dims[idx]) for idx in 1:N)
@@ -244,3 +225,25 @@ end
 function vlast(Vec::GPUV) where {GPUV<:CuVector}
     CUDA.@allowscalar last(Vec)
 end
+
+
+#=
+@inline function getindex2(A::PeriodicAbstractMesh{T,N},
+                           I::Vararg{T,N}) where {T<:Integer,N}
+    index = mod1(I[1], A.dims[1])
+    @simd for i in 2:N
+        @inbounds index += (mod1(I[i], A.dims[i]) - 1) * A.multiplied_dims[i - 1]
+    end
+    return index
+end
+
+@inline function getindex3(A::PeriodicAbstractMesh{T,N},
+                           I::Vararg{T,N}) where {T<:Integer,N}
+    I = @. mod1(I, A.dims)
+    index = I[1]
+    @simd for i in 2:N
+        @inbounds index += (I[i] - 1) * A.multiplied_dims[i - 1]
+    end
+    return index
+end
+=#

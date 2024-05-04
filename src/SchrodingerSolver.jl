@@ -18,6 +18,7 @@ module SchrodingerSolver
 
     using Base.Threads 
     using Base.Iterators
+    using Base.Cartesian
     using Profile
     using ProgressMeter
     using SparseMatricesCSR

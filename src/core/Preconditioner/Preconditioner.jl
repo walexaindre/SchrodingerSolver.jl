@@ -4,7 +4,7 @@ function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
                                                               Tv<:AbstractFloat,
                                                               TolT<:AbstractFloat,
                                                               RTup<:TupleOrRange{V},
-                                                              Matrix<:AbstractArray{Tv},
+                                                              Matrix,
                                                               AM<:AbstractMesh{V,N}}
     if size(M, 1) != size(M, 2)
         throw(DimensionMismatch("Matrix must be square"))
