@@ -58,3 +58,33 @@ end
     dsum = iterative_dim_sum(dims)
     SymmetricOffset(dims, dsum, offsets)
 end
+
+@inline function apply_offset_by_dim!(out, idx, I, A, offset, dim)
+    midx = idx
+    for oidx in offset
+        tmp = I[dim] + oidx
+        J = Base.setindex(I, tmp, dim)
+        out[midx] = getindex(A, CartesianIndex(J))
+        midx += 1
+    end
+end
+
+@inline function apply_offsets!(out::Vec, start_idx::Ti,
+                                A::PeriodicAbstractMesh{Ti,N},
+                                I::Ind,
+                                offsets::SymmetricOffset{N,Ti,OffsetTuple}) where {V<:Integer,
+                                                                                   N,
+                                                                                   OffsetTuple,
+                                                                                   Ind<:TupleOrCartesianIndex{N,
+                                                                                                              V},
+                                                                                   Vec<:AbstractVector}
+
+    # 0 based offset start
+    sidx = start_idx - 1
+
+    for dim in 1:N
+        apply_offset_by_dim!(out, sidx + offsets.dsum[dim], I, A,
+                             offsets.offsets[dim], dim)
+    end
+    out
+end
