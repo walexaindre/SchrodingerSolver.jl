@@ -98,7 +98,7 @@ end
 
 include("SpaceDiscretizationDefaults.jl")
 
-function get_A_format_IJV(::Type{T}, Mesh::AM,
+function get_A_format_COO(::Type{T}, Mesh::AM,
                           Order::Symbol) where {V<:Integer,AM<:AbstractMesh{V,1},
                                                 T<:AbstractFloatOrRational{V}}
 
@@ -133,8 +133,7 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
     _J = zeros(V, space_usage) #column idx
     _V = repeat(value, length(Mesh))
     
-    offsets = AssemblySymmetricOffset(UniqueZeroOffset, (offsets,))
-
+    offsets = GenerateOffset(OffsetUniqueZero, 1, (offsets,))
 
     #Get the IJV format of the matrix A
     @threads for idx in 1:length(Mesh)
@@ -148,7 +147,7 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
     _I, _J, _V
 end
 
-function get_A_format_IJV(::Type{T}, Mesh::AM,
+function get_A_format_COO(::Type{T}, Mesh::AM,
                           Order::NTuple{N,Symbol}) where {V<:Integer,
                                                           T<:AbstractFloatOrRational{V},
                                                           N,AM<:AbstractMesh{V,N}}
@@ -164,7 +163,7 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
         cmesh,_ = iterate(submesh,pos-1)
         sz = length(cmesh)
 
-        _I,_J,_V = get_A_format_IJV(T, cmesh, Order[pos])
+        _I,_J,_V = get_A_format_COO(T, cmesh, Order[pos])
 
         sparse(_I,_J,_V,sz,sz)
     end
@@ -175,7 +174,7 @@ function get_A_format_IJV(::Type{T}, Mesh::AM,
     findnz(A)
 end
 
-function get_D_format_IJV(::Type{T}, Grid::AG,
+function get_D_format_COO(::Type{T}, Grid::AG,
                           Order::NTuple{N,Symbol}) where {N,
                                                           T<:AbstractFloatOrRational,
                                                           AG<:AbstractGrid{NTuple{N,
@@ -272,5 +271,5 @@ function get_D_format_IJV(::Type{T}, Grid::AG,
     end
 end
 
-export SpaceDiscretization, get_A_format_IJV, get_D_format_IJV, check_validity,
+export SpaceDiscretization, get_A_format_COO, get_D_format_COO, check_validity,
        validate_positive_definite, validate_constraints, estimate_order

@@ -38,9 +38,9 @@ function generator!(io,ordercollection)
     vspacing = "\n\n"
 
     commentaryheader = "#Compares: $cnum Depth $dnum \n"
-    finalfunctionheader = "function swapsort(:args;lt=isless,by=identity)"
-    auxiliaryfunction1 = "swapsort(x::NTuple{$n,T};lt=isless,by=identity) where {T} = swapsort($indexvarxlist,lt=lt,by=by)\n"
-
+    finalfunctionheader = "@inline function swapsort(:args;lt=isless,by=identity)"
+    auxiliaryfunction1 = "@inline swapsort(x::NTuple{$n,T};lt=isless,by=identity) where {T} = swapsort($indexvarxlist,lt=lt,by=by)\n"
+    auxiliaryfunction2 = "@inline swapsort(::Type{Val{$n}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort($indexvarxlist,lt=lt,by=by)\n"
     arglist = join(varlist, ", ")
 
     write(io, commentaryheader)
@@ -66,6 +66,8 @@ function generator!(io,ordercollection)
     write(io, "end")
     write(io, vspacing)
     write(io, auxiliaryfunction1)
+    write(io, vspacing)
+    write(io, auxiliaryfunction2)
     write(io, vspacing)
     io
 end

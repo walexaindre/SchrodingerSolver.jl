@@ -1,5 +1,5 @@
 #Compares: 29 Depth 8 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10;lt=isless,by=identity)
     i1,i8 = min_max(i1,i8,lt,by)
     i2,i7 = min_max(i2,i7,lt,by)
     i3,i10 = min_max(i3,i10,lt,by)
@@ -39,11 +39,14 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10;lt=isless,by=identity)
     return i1, i2, i3, i4, i5, i6, i7, i8, i9, i10
 end
 
-swapsort(x::NTuple{10,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10],lt=lt,by=by)
+@inline swapsort(x::NTuple{10,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{10}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10],lt=lt,by=by)
 
 
 #Compares: 35 Depth 8 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11;lt=isless,by=identity)
     i1,i11 = min_max(i1,i11,lt,by)
     i2,i9 = min_max(i2,i9,lt,by)
     i3,i10 = min_max(i3,i10,lt,by)
@@ -89,11 +92,14 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11;lt=isless,by=iden
     return i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11
 end
 
-swapsort(x::NTuple{11,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],lt=lt,by=by)
+@inline swapsort(x::NTuple{11,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{11}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],lt=lt,by=by)
 
 
 #Compares: 39 Depth 9 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12;lt=isless,by=identity)
     i1,i12 = min_max(i1,i12,lt,by)
     i2,i11 = min_max(i2,i11,lt,by)
     i3,i10 = min_max(i3,i10,lt,by)
@@ -144,11 +150,14 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12;lt=isless,by
     return i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12
 end
 
-swapsort(x::NTuple{12,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12],lt=lt,by=by)
+@inline swapsort(x::NTuple{12,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{12}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12],lt=lt,by=by)
 
 
 #Compares: 45 Depth 10 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13;lt=isless,by=identity)
     i1,i12 = min_max(i1,i12,lt,by)
     i2,i13 = min_max(i2,i13,lt,by)
     i3,i11 = min_max(i3,i11,lt,by)
@@ -206,11 +215,14 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13;lt=isle
     return i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13
 end
 
-swapsort(x::NTuple{13,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13],lt=lt,by=by)
+@inline swapsort(x::NTuple{13,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{13}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13],lt=lt,by=by)
 
 
 #Compares: 51 Depth 10 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14;lt=isless,by=identity)
     i1,i14 = min_max(i1,i14,lt,by)
     i2,i13 = min_max(i2,i13,lt,by)
     i3,i12 = min_max(i3,i12,lt,by)
@@ -274,11 +286,14 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14;lt
     return i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14
 end
 
-swapsort(x::NTuple{14,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14],lt=lt,by=by)
+@inline swapsort(x::NTuple{14,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{14}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14],lt=lt,by=by)
 
 
 #Compares: 56 Depth 10 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15;lt=isless,by=identity)
     i1,i13 = min_max(i1,i13,lt,by)
     i2,i10 = min_max(i2,i10,lt,by)
     i3,i11 = min_max(i3,i11,lt,by)
@@ -347,11 +362,14 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i
     return i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15
 end
 
-swapsort(x::NTuple{15,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15],lt=lt,by=by)
+@inline swapsort(x::NTuple{15,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{15}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15],lt=lt,by=by)
 
 
 #Compares: 60 Depth 10 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16;lt=isless,by=identity)
     i1,i16 = min_max(i1,i16,lt,by)
     i2,i15 = min_max(i2,i15,lt,by)
     i3,i14 = min_max(i3,i14,lt,by)
@@ -424,20 +442,26 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i
     return i1, i2, i3, i4, i5, i6, i7, i8, i9, i10, i11, i12, i13, i14, i15, i16
 end
 
-swapsort(x::NTuple{16,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15], x[16],lt=lt,by=by)
+@inline swapsort(x::NTuple{16,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15], x[16],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{16}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15], x[16],lt=lt,by=by)
 
 
 #Compares: 1 Depth 1 
-function swapsort(i1, i2;lt=isless,by=identity)
+@inline function swapsort(i1, i2;lt=isless,by=identity)
     i1,i2 = min_max(i1,i2,lt,by)
     return i1, i2
 end
 
-swapsort(x::NTuple{2,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2],lt=lt,by=by)
+@inline swapsort(x::NTuple{2,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{2}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2],lt=lt,by=by)
 
 
 #Compares: 3 Depth 3 
-function swapsort(i1, i2, i3;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3;lt=isless,by=identity)
     i1,i3 = min_max(i1,i3,lt,by)
 
     i1,i2 = min_max(i1,i2,lt,by)
@@ -446,11 +470,14 @@ function swapsort(i1, i2, i3;lt=isless,by=identity)
     return i1, i2, i3
 end
 
-swapsort(x::NTuple{3,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3],lt=lt,by=by)
+@inline swapsort(x::NTuple{3,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{3}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3],lt=lt,by=by)
 
 
 #Compares: 5 Depth 3 
-function swapsort(i1, i2, i3, i4;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4;lt=isless,by=identity)
     i1,i4 = min_max(i1,i4,lt,by)
     i2,i3 = min_max(i2,i3,lt,by)
 
@@ -461,11 +488,14 @@ function swapsort(i1, i2, i3, i4;lt=isless,by=identity)
     return i1, i2, i3, i4
 end
 
-swapsort(x::NTuple{4,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4],lt=lt,by=by)
+@inline swapsort(x::NTuple{4,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{4}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4],lt=lt,by=by)
 
 
 #Compares: 9 Depth 5 
-function swapsort(i1, i2, i3, i4, i5;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5;lt=isless,by=identity)
     i1,i5 = min_max(i1,i5,lt,by)
 
     i1,i3 = min_max(i1,i3,lt,by)
@@ -482,11 +512,14 @@ function swapsort(i1, i2, i3, i4, i5;lt=isless,by=identity)
     return i1, i2, i3, i4, i5
 end
 
-swapsort(x::NTuple{5,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5],lt=lt,by=by)
+@inline swapsort(x::NTuple{5,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{5}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5],lt=lt,by=by)
 
 
 #Compares: 12 Depth 5 
-function swapsort(i1, i2, i3, i4, i5, i6;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6;lt=isless,by=identity)
     i1,i6 = min_max(i1,i6,lt,by)
     i2,i4 = min_max(i2,i4,lt,by)
     i3,i5 = min_max(i3,i5,lt,by)
@@ -506,11 +539,14 @@ function swapsort(i1, i2, i3, i4, i5, i6;lt=isless,by=identity)
     return i1, i2, i3, i4, i5, i6
 end
 
-swapsort(x::NTuple{6,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6],lt=lt,by=by)
+@inline swapsort(x::NTuple{6,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{6}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6],lt=lt,by=by)
 
 
 #Compares: 16 Depth 6 
-function swapsort(i1, i2, i3, i4, i5, i6, i7;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7;lt=isless,by=identity)
     i1,i7 = min_max(i1,i7,lt,by)
     i2,i6 = min_max(i2,i6,lt,by)
     i3,i4 = min_max(i3,i4,lt,by)
@@ -535,11 +571,14 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7;lt=isless,by=identity)
     return i1, i2, i3, i4, i5, i6, i7
 end
 
-swapsort(x::NTuple{7,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7],lt=lt,by=by)
+@inline swapsort(x::NTuple{7,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{7}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7],lt=lt,by=by)
 
 
 #Compares: 19 Depth 6 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8;lt=isless,by=identity)
     i1,i8 = min_max(i1,i8,lt,by)
     i2,i7 = min_max(i2,i7,lt,by)
     i3,i6 = min_max(i3,i6,lt,by)
@@ -567,11 +606,14 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8;lt=isless,by=identity)
     return i1, i2, i3, i4, i5, i6, i7, i8
 end
 
-swapsort(x::NTuple{8,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8],lt=lt,by=by)
+@inline swapsort(x::NTuple{8,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{8}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8],lt=lt,by=by)
 
 
 #Compares: 25 Depth 7 
-function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9;lt=isless,by=identity)
+@inline function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9;lt=isless,by=identity)
     i1,i9 = min_max(i1,i9,lt,by)
     i2,i7 = min_max(i2,i7,lt,by)
     i3,i6 = min_max(i3,i6,lt,by)
@@ -606,6 +648,9 @@ function swapsort(i1, i2, i3, i4, i5, i6, i7, i8, i9;lt=isless,by=identity)
     return i1, i2, i3, i4, i5, i6, i7, i8, i9
 end
 
-swapsort(x::NTuple{9,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9],lt=lt,by=by)
+@inline swapsort(x::NTuple{9,T};lt=isless,by=identity) where {T} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9],lt=lt,by=by)
+
+
+@inline swapsort(::Type{Val{9}},x::Vec; lt=isless, by=identity) where {Vec<:AbstractVector} = swapsort(x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9],lt=lt,by=by)
 
 

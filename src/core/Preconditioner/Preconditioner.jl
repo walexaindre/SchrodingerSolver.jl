@@ -25,7 +25,7 @@ function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
     Ind = ntuple(Returns(1), N)
 
     #Generate a list of offsets for given ranges.
-    offsets = offset_generator(UniqueZeroOffset, AMesh, offset_ranges)
+    offsets = GenerateOffset(OffsetUniqueZero,1, GenerateRank(offset_ranges, N))
 
     #Apply offset list to first element (1,1,...,1) of the mesh.
     one_idx_offset = apply_offsets(AMesh, Ind, offsets)
@@ -52,7 +52,7 @@ function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
     minimal_offset = infer_minimal_offsets(undropped_offset_positions, offsets)
     minimal_index = apply_offsets(AMesh, Ind, minimal_offset)
 
-    core_circulant_matrix_format_IJV(col[minimal_index], minimal_offset, AMesh)
+    core_circulant_matrix_format_COO(col[minimal_index], minimal_offset, AMesh)
 end
 
 function drop_kron(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,

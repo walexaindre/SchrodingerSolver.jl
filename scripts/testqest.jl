@@ -5,10 +5,14 @@ using GLMakie
 using CUDA
 CUDA.allowscalar(false)
 
-A = AssemblySymmetricOffset(UniqueZeroOffset, (1:2,1:2))
+A = GenerateOffset(OffsetUniqueZero,1, (1:2,1:3))
 
 PA = PeriodicAbstractMesh(Int, (8,8))
 Grid = PeriodicGrid(Int,Float64,1.0,(1:0.5:4,1:0.5:4))
+
+SI,SJ,SV = core_circulant_matrix_format_COO(collect(1:length(A)),A,PA)
+sparse(SI,SJ,SV)
+sparsitypattern(SI,SJ,SV)
 
 
 I = (1, 1)
@@ -57,7 +61,7 @@ end
 
 
 
-AI,AJ,AV = get_A_format_IJV(Float64, PA, (:ord4))
+AI,AJ,AV = get_A_format_COO(Float64, PA, (:ord4,:ord4))
 
 DI,DJ,DV = get_D_format_IJV(Float64, Grid, (:ord4,:ord4))
 

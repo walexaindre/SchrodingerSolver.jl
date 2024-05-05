@@ -1,126 +1,78 @@
-Base.length(o::BaseOffset{V,S}) where {V,S} = length(o.offsets)
-Base.size(o::BaseOffset{V,S}) where {V,S} = size(o.offsets)
-Base.eltype(o::BaseOffset{V,S}) where {V,S} = V
-Base.getindex(o::BaseOffset{V,S}, idx::V) where {V<:Integer,S} = o.offsets[idx]
+@inline Base.ndims(o::BaseOffset{Ti,Tv,M,S,SV}) where {Ti<:Integer,Tv,M,S<:NTuple{M,Ti},SV<:TupleOrVector{Tv}} = 1
+@inline Base.length(o::BaseOffset{Ti,Tv,M,S,SV}) where {Ti<:Integer,Tv,M,S<:NTuple{M,Ti},SV<:TupleOrVector{Tv}} = M
+@inline Base.size(o::BaseOffset{Ti,Tv,M,S,SV}) where {Ti<:Integer,Tv,M,S<:NTuple{M,Ti},SV<:TupleOrVector{Tv}} = (M,)
+@inline Base.getindex(o::BaseOffset{Ti,Tv,M,S,SV}, idx::Ti) where {Ti<:Integer,Tv,M,S<:NTuple{M,Ti},SV<:TupleOrVector{Tv}} = o.offsets[idx]
+@inline Base.getindex(o::BaseOffset{Ti,Tv,M,S,SV}, idx::CartesianIndex{1}) where {Ti<:Integer,Tv,M,S<:NTuple{M,Ti},SV<:TupleOrVector{Tv}} = o.offsets[idx]
+@inline Base.eltype(o::BaseOffset{Ti,Tv,M,S,SV}) where {Ti<:Integer,Tv,M,S<:NTuple{M,Ti},SV<:TupleOrVector{Tv}} = Ti
 
-@inline function check_offset_min(voff)
-    if minimum(voff; init = 1) < 1
-        throw(ArgumentError("Start index must be non-negative nor zero"))
+function check_symmetry(offset_values)
+    fidx = firstindex(offset_values)
+    lidx = lastindex(offset_values)
+
+    if length(offset_values) > 1
+        #Checking for existence of zero element
+        if offset_values[1] == 0
+            if iseven(length(offset_values))
+                throw(ArgumentError("Symmetric offsets with zero element must have an odd number of elements"))
+            end
+            fidx += 1
+        end
+        #Checking for symmetry
+        for i in fidx:2:lidx
+            if offset_values[i] != -offset_values[i + 1]
+                throw(ArgumentError("Symmetric offsets must be symmetrically paired. Status: [$i  $(i + 1)]"))
+            end
+        end
+        #Checking for uniqueness
+        if length(unique(offset_values)) != length(offset_values)
+            throw(ArgumentError("Symmetric offsets must be unique"))
+        end
     end
 end
 
-@inline function check_value_range_compatibility(::Type{NonZeroOffset}, rankvalues,
-                                                 values)
-    if length(rankvalues) * 2 != length(values)
-        throw(DimensionMismatch("The length of the offsets vector must be equal to the length of the values vector"))
+function check_validty(values, offsets)
+    if length(values) != length(offsets)
+        throw(ArgumentError("Values and offsets must have the same length"))
     end
 end
 
-@inline function check_value_range_compatibility(rankvalues, values)
-    if length(rankvalues) * 2 + 1 != length(values)
-        throw(DimensionMismatch("The length of the offsets vector must be equal to the length of the values vector"))
-    end
+@inline Base.ndims(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {N,Ti<:Integer,Tv,OffsetTuple} = N
+@inline Base.length(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {N,Ti<:Integer,Tv,OffsetTuple} = sum(s.dims)
+@inline Base.size(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {N,Ti<:Integer,Tv,OffsetTuple} = s.dims
+@inline Base.iterate(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {N,Ti<:Integer,Tv,OffsetTuple} = flatten(s.offsetbydim)
+@inline Base.eltype(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {N,Ti<:Integer,Tv,OffsetTuple} = Ti
+
+@inline Base.getindex(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}, dim::Ti, index::Ti) where {N,Ti<:Integer,Tv,OffsetTuple} = s.offsetbydim[dim][index]
+@inline Base.getindex(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}, dimindex::NTuple{2,Ti}) where {N,Ti<:Integer,Tv,OffsetTuple} = s.offsetbydim[dimindex[1]][dimindex[2]]
+@inline Base.getindex(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}, dimindex::CartesianIndex{2}) where {N,Ti<:Integer,Tv,OffsetTuple} = s.offsetbydim[dimindex[1]][dimindex[2]]
+@inline Base.getindex(s::SymmetricOffset{N,Ti,Tv,OffsetTuple}, dim::Ti) where {N,Ti<:Integer,Tv,OffsetTuple} = s.offsetbydim[dim]
+function Base.show(io::IO,
+                   s::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {N,Ti<:Integer,Tv,
+                                                                   OffsetTuple}
+    header = (["SymmetricOffset"], ["{Dimensions:$N,Ti:$Ti,Tv:$Tv}"], ["Offsets"])
+    pretty_table(io, collect(s.offsetbydim); header = header)
 end
 
-BaseOffset(S::Vec) where {V<:Integer,Vec<:AbstractVector{V}} = BaseOffset(S,
-                                                                          vzeros(Vec,
-                                                                                 length(S)))
-
-##############################################################################################
-
-function AssemblyBaseOffset(::Type{VecStorage}, ::Type{NonZeroOffset},
-                            Data::Container,
-                            Values::Vec) where {Tv,V<:Integer,VecStorage,
-                                                Container<:VectorOrRank{V},
-                                                Vec<:VectorOrRank{Tv}}
-    check_offset_min(Data)
-    check_value_range_compatibility(NonZeroOffset, Data, Values)
-    SType = VecStorage{V}
-    SVType = VecStorage{Tv}
-    offset = SType(collect(flatten(zip(Data, -Data))))
-    BaseOffset(offset, SVType(Values))
+function (s::SymmetricOffset{N,Ti,Tv,OffsetTuple})(dim::Ti,
+                                                   index::Ti) where {N,Ti<:Integer,
+                                                                     Tv,
+                                                                     OffsetTuple}
+    CartesianIndex(ntuple(d -> d != dim ? zero(Ti) : s.offsetbydim[dim][index],
+                          Val{N}))
 end
 
-function AssemblyBaseOffset(::Type{VecStorage}, ::Type{NonZeroOffset},
-                            Data::Container,
-                            f::Fun) where {V<:Integer,VecStorage,
-                                           Container<:VectorOrRank{V},Fun}
-    check_offset_min(Data)
-    SType = VecStorage{V}
-    SVType = VecStorage{eltype(f(vfirst(Data)))}
-    offset = SType(collect(flatten(zip(Data, -Data))))
-    Values = SVType(f.(offset))
-    BaseOffset(offset, Values)
+function (s::SymmetricOffset{N,Ti,Tv,OffsetTuple})(dimindex::CartesianIndex{2}) where {N,
+                                                                                       Ti<:Integer,
+                                                                                       Tv,
+                                                                                       OffsetTuple}
+    CartesianIndex(ntuple(d -> d != dimindex[1] ? zero(Ti) :
+                               s.offsetbydim[dimindex[1]][dimindex[2]], Val{N}))
 end
-
-function AssemblyBaseOffset(::Type{VecStorage}, Data::Container,
-                            Values::Vec) where {Tv,V<:Integer,VecStorage,
-                                                Container<:VectorOrRank{V},
-                                                Vec<:VectorOrRank{Tv}}
-    check_offset_min(Data)
-    check_value_range_compatibility(Data, Values)
-    SType = VecStorage{V}
-    SVType = VecStorage{Tv}
-    offset = SType(collect(flatten(zip(Data, -Data))))
-    BaseOffset(SType(offset), SVType(Values))
-end
-
-function AssemblyBaseOffset(::Type{VecStorage}, Data::Container,
-                            f::Fun) where {VecStorage,Fun,V<:Integer,
-                                           Container<:VectorOrRank{V}}
-    check_offset_min(Data)
-    SType = VecStorage{V}
-    SVType = VecStorage{eltype(f(0))}
-    offset = SType(vcat(0, collect(flatten(zip(Data, -Data)))))
-    Values = SVType(f.(offset))
-    BaseOffset(offset, Values)
-end
-
-##############################################################################################
-
-function AssemblyBaseOffset(::Type{NonZeroOffset},
-                            Data::Container) where {V<:Integer,
-                                                    Container<:VectorOrRank{V}}
-    AssemblyBaseOffset(Vector, NonZeroOffset, Data, Returns(0))
-end
-
-function AssemblyBaseOffset(::Type{NonZeroOffset}, Data::Container,
-                            Value) where {V<:Integer,Container<:VectorOrRank{V}}
-    AssemblyBaseOffset(Vector, NonZeroOffset, Data, Value)
-end
-
-function AssemblyBaseOffset(Data::Container) where {V<:Integer,
-                                                    Container<:VectorOrRank{V}}
-    AssemblyBaseOffset(Vector, Data, Returns(0))
-end
-
-function AssemblyBaseOffset(Data::Container,
-                            Value) where {V<:Integer,Container<:VectorOrRank{V}}
-    AssemblyBaseOffset(Vector, Data, Value)
-end
-
-##############################################################################################
-
-Base.ndims(::SymmetricOffset{V,N,OffsetTuple}) where {V<:Integer,N,OffsetTuple} = N
-Base.length(o::SymmetricOffset{V,N,OffsetTuple}) where {V<:Integer,N,OffsetTuple} = sum(o.dims)
-Base.size(o::SymmetricOffset{V,N,OffsetTuple}) where {V<:Integer,N,OffsetTuple} = o.dims
-Base.getindex(o::SymmetricOffset{V,N,OffsetTuple}, odim::V, elemidx::V) where {V<:Integer,N,OffsetTuple} = o.offsets[odim][elemidx]
-Base.iterate(S::SymmetricOffset{V,N,OffsetTuple}) where {V<:Integer,N,OffsetTuple} = flatten(S.offsets)
 
 @inline cdims(offsets) =
     ntuple(length(offsets)) do i
         length(offsets[i])
     end
-
-@inline function iterative_only_first_zero(ranks)
-    ntuple(length(ranks)) do i
-        if i != 1
-            return AssemblyBaseOffset(NonZeroOffset, ranks[i])
-        else
-            return AssemblyBaseOffset(ranks[i])
-        end
-    end
-end
 
 @inline function iterative_dim_sum(dims)
     prev = 1
@@ -135,43 +87,131 @@ end
     end
 end
 
-@inline function SymmetricOffset(offsets)
+@inline function GenerateRank(R::RVec, ndims::Ti) where {Ti,RVec<:VectorOrRank{Ti}}
+    ntuple(Returns(R), ndims)
+end
+
+@inline function GenerateRank(Rank::RTup, ndims::Ti) where {Ti,RTup<:Tuple}
+    if ndims != length(Rank)
+        throw(ArgumentError("The rank must have the same length as the number of dimensions"))
+    end
+
+    Rank
+end
+
+@inline function BaseOffset(Values::T,Offsets::T) where {T<:Tuple{}}
+    BaseOffset{Int,Int,0,Tuple{},Tuple{}}((),())
+end
+
+@inline function SymmetricOffset(values::Tup1,
+                                 offsets::Tup2) where {Tup1<:Tuple,Tup2<:Tuple}
     dims = cdims(offsets)
     dsum = iterative_dim_sum(dims)
-    SymmetricOffset(dims, dsum, offsets)
+    offsets = swapsort.(offsets, by = normalize)
+    check_symmetry.(offsets)
+    check_validty.(values, offsets)
+
+    constructed_base = ntuple(length(dims)) do i
+        BaseOffset(offsets[i], values[i])
+    end
+
+    SymmetricOffset(dims, dsum, constructed_base)
 end
 
-@inline function AssemblySymmetricOffset(::Type{NonZeroOffset},
-                                         Ranks::Tup) where {Tup}
-    offsets = Tuple(AssemblyBaseOffset(NonZeroOffset, rank) for rank in Ranks)
+@inline function SymmetricOffset(offsets::Tup1) where {Tup1<:Tuple}
+    dims = cdims(offsets)
+    dsum = iterative_dim_sum(dims)
+    offsets = swapsort.(offsets, by = normalize)
+    check_symmetry.(offsets)
+
+    constructed_base = ntuple(length(dims)) do i
+        BaseOffset(offsets[i], offsets[i])
+    end
+
+    SymmetricOffset(dims, dsum, constructed_base)
+end
+
+function GenerateOffset(::Type{OffsetAllZero}, Ranges::Tup1,
+                        ValueTup::Tup2) where {Tup1<:Tuple,Tup2<:Tuple}
+    offsets = ntuple(length(Ranges)) do i
+        vals = collect(Ranges[i])
+        return Tuple(unique(vcat(0, vals, -vals)))
+    end
+
+    SymmetricOffset(offsets, ValueTup)
+end
+
+function GenerateOffset(::Type{OffsetAllZero}, Ranges::Tup1) where {Tup1<:Tuple}
+    offsets = ntuple(length(Ranges)) do i
+        vals = collect(Ranges[i])
+        return Tuple(unique(vcat(0, vals, -vals)))
+    end
+
     SymmetricOffset(offsets)
 end
 
-@inline function AssemblySymmetricOffset(Ranks::Tup) where {Tup}
-    offsets = Tuple(AssemblyBaseOffset(rank) for rank in Ranks)
+function GenerateOffset(::Type{OffsetNonZero}, Ranges::Tup1) where {Tup1<:Tuple}
+    offsets = ntuple(length(Ranges)) do i
+        vals = collect(Ranges[i])
+        filter!(x -> x != 0, vals)
+        return Tuple(unique(vcat(vals, -vals)))
+    end
     SymmetricOffset(offsets)
 end
 
-@inline function AssemblySymmetricOffset(::Type{AllZeroOffset},
-                                         Ranks::Tup) where {Tup}
-    AssemblySymmetricOffset(Ranks)
+function GenerateOffset(::Type{OffsetNonZero}, Ranges::Tup1,
+                        ValueTup::Tup2) where {Tup1<:Tuple,Tup2<:Tuple}
+    offsets = ntuple(length(Ranges)) do i
+        vals = collect(Ranges[i])
+        filter!(x -> x != 0, vals)
+        return Tuple(unique(vcat(vals, -vals)))
+    end
+
+    SymmetricOffset(offsets, ValueTup)
 end
 
-@inline function AssemblySymmetricOffset(::Type{UniqueZeroOffset},
-                                         Ranks::Tup) where {Tup}
-    offsets = iterative_only_first_zero(Ranks)
+function GenerateOffset(::Type{OffsetUniqueZero}, dim,
+                        Ranges::Tup1) where {Tup1<:Tuple}
+    offsets = ntuple(length(Ranges)) do i
+        vals = collect(Ranges[i])
+
+        if i == dim
+            return Tuple(unique(vcat(0, vals, -vals)))
+        else
+            filter!(x -> x != 0, vals)
+            return Tuple(unique(vcat(vals, -vals)))
+        end
+    end
+
     SymmetricOffset(offsets)
 end
 
+function GenerateOffset(::Type{OffsetUniqueZero}, dim,
+                        Ranges::Tup1,
+                        ValuesTup::Tup2) where {Tup1<:Tuple,Tup2<:Tuple}
+    offsets = ntuple(length(Ranges)) do i
+        vals = collect(Ranges[i])
 
-@inline function extract_all_symmetric_offsets(offsets::SymmetricOffset{V,N,OTup}) where {V<:Integer,
-                                                                                       N,
-                                                                                       OTup}
+        if i == dim
+            return Tuple(unique(vcat(0, vals, -vals)))
+        else
+            filter!(x -> x != 0, vals)
+            return Tuple(unique(vcat(vals, -vals)))
+        end
+    end
+
+    SymmetricOffset(offsets, ValuesTup)
+end
+
+@inline function extract_all_symmetric_offsets(offsets::SymmetricOffset{N,Ti,Tv,
+                                                                        OTup}) where {N,
+                                                                                      Ti<:Integer,
+                                                                                      Tv,
+                                                                                      OTup}
     ntuple(N) do i
         SymmetricOffset((offsets.offsets[i],))
     end
 end
-
 
 @inline function apply_offset_by_dim!(out, idx, I, A, offset, dim)
     midx = idx
@@ -183,67 +223,84 @@ end
     end
 end
 
-@inline function get_offsets_vector(offsets::SymmetricOffset{V,N,OTup}) where {V<:Integer,
-                                                                               N,
-                                                                               OTup}
-    foldr(vcat, offsets.offsets)
-end
-
-@inline function apply_offsets!(out::Vec, start_idx::V, A::PeriodicAbstractMesh{V,N},
+@inline function apply_offsets!(out::Vec, start_idx::Ti,
+                                A::PeriodicAbstractMesh{Ti,N},
                                 I::Ind,
-                                offsets::SymmetricOffset{V,N,OTup}) where {V<:Integer,
-                                                                           N,
-                                                                           OTup,
-                                                                           Ind<:TupleOrCartesianIndex{N,
-                                                                                                      V},
-                                                                           Vec<:AbstractVector}
+                                offsets::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {Ti<:Integer,
+                                                                                      Tv,
+                                                                                      N,
+                                                                                      OffsetTuple,
+                                                                                      Ind<:TupleOrCartesianIndex{N,
+                                                                                                                 Ti},
+                                                                                      Vec<:AbstractVector}
 
     # 0 based offset start
     sidx = start_idx - 1
 
     for dim in 1:N
         apply_offset_by_dim!(out, sidx + offsets.dsum[dim], I, A,
-                             offsets.offsets[dim], dim)
+                             offsets.offsetbydim[dim], dim)
     end
+
     out
 end
 
-@inline function apply_offsets(A::PeriodicAbstractMesh{V,N}, I::Ind,
-                               offsets::SymmetricOffset{V,N,OTup}) where {V<:Integer,
-                                                                          N,
-                                                                          Ind<:TupleOrCartesianIndex{N,
-                                                                                                     V},
-                                                                          OTup}
+@inline function apply_offsets(A::PeriodicAbstractMesh{Ti,N},
+                               I::Ind,
+                               offsets::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {Ti<:Integer,
+                                                                                     Tv,
+                                                                                     N,
+                                                                                     OffsetTuple,
+                                                                                     Ind<:TupleOrCartesianIndex{N,
+                                                                                                                Ti}}
     offlen = length(offsets)
-    out = Vector{V}(undef, offlen)
+    out = Vector{Ti}(undef, offlen)
 
     apply_offsets!(out, 1, A, I, offsets)
 end
 
-@inline function offset_generator(::Type{ZOffsetRule}, AMesh::AM,
-                                  R::TRank) where {N,V<:Integer,
-                                                   ZOffsetRule<:ZeroOffsetRule,
-                                                   TRank<:AbstractRange{V},
-                                                   AM<:AbstractMesh{V,N}}
-    AssemblySymmetricOffset(ZOffsetRule, ntuple(Returns(R), N))
+@inline function offset_to_vector(dim::Ti,
+                                  offsets::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {Ti<:Integer,
+                                                                                        Tv,
+                                                                                        N,
+                                                                                        OffsetTuple}
+    collect(offsets[dim])
 end
 
-@inline function offset_generator(::Type{ZOffsetRule}, AMesh::AM,
-                                  RankTuple::TupTRank) where {N,V<:Integer,
-                                                              ZOffsetRule<:ZeroOffsetRule,
-                                                              TupTRank<:NTuple{N},
-                                                              AM<:AbstractMesh{V,N}}
-    AssemblySymmetricOffset(ZOffsetRule, RankTuple)
+@inline function span_by_dim(dim::Ti,
+                             SOff::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {Ti<:Integer,
+                                                                                Tv,
+                                                                                N,
+                                                                                OffsetTuple}
+    (SOff.dsum[dim], SOff.dsum[dim] + SOff.dims[dim] - 1)
 end
 
-##############################################################################################
+@inline function infer_minimal_offsets(oindices::Vec,
+                                       offsets::SymmetricOffset{N,Ti,Tv,OffsetTuple}) where {Ti<:Integer,
+                                                                                             Tv,
+                                                                                             N,
+                                                                                             OffsetTuple,
+                                                                                             Vec<:AbstractVector{Ti}}
+    minimal_offsets = ntuple(N) do dim
+        vodim = offset_to_vector(dim, offsets)
+        start, stop = span_by_dim(dim, offsets)
+        candidate_indices = oindices .>= start .&& oindices .<= stop
+        candidates = oindices[candidate_indices]
+        candidates = candidates .- (start-1)
+        normalized_indices = vodim[candidates]
+        return Tuple(normalized_indices) #BaseOffset(normalized_indices, candidates)
+    end
+    SymmetricOffset(minimal_offsets)
+end
 
-@inline function core_circulant_matrix_format_IJV(col::Vec,
-                                                  SOff::SymmetricOffset{V,N,OTup},
-                                                  AMesh::PeriodicAbstractMesh{V,N}) where {V<:Integer,
-                                                                                           N,
-                                                                                           Vec,
-                                                                                           OTup}
+@inline function core_circulant_matrix_format_COO(col::Vec,
+                                                  SOff::SymmetricOffset{N,Ti,Tv,
+                                                                        OTup},
+                                                  AMesh::PeriodicAbstractMesh{Tv,N}) where {Ti<:Integer,
+                                                                                            Tv,
+                                                                                            N,
+                                                                                            Vec,
+                                                                                            OTup}
     if (length(col) != length(SOff))
         throw(DimensionMismatch("The length of the column vector must be equal to the length of the offsets vector"))
     end
@@ -251,7 +308,7 @@ end
     sz = length(col) * length(AMesh)
     sz_offset = length(SOff)
 
-    _I = Vector{V}(undef, sz)
+    _I = Vector{Ti}(undef, sz)
     _J = similar(_I)
     _V = Vector{eltype(col)}(undef, sz)
     LinInd = LinearIndices(AMesh)
@@ -271,75 +328,6 @@ end
     _I, _J, _V
 end
 
-@inline function span_by_dim(dim::V,
-                             SOff::SymmetricOffset{V,N,OTup}) where {V<:Integer,
-                                                                     N,
-                                                                     OTup}
-    (SOff.dsum[dim], SOff.dsum[dim] + SOff.dims[dim] - 1)
-end
-
-@inline function offset_to_vector(offset::BaseOffset{V,Tv,S,SV}) where {V,Tv,S,SV}
-    haszero = test_if_zero(offset.offsets, 1)
-
-    if haszero
-        len = div(length(offset) - 1, 2) + 1
-        out = vzeros(S, len)
-        out[2:end] .= offset[2:2:end]
-    else
-        len = div(length(offset), 2)
-        out = offset[1:2:end]
-    end
-
-    return out
-end
-
-"""
-
-
-"""
-@inline function infer_minimal_offsets(oindices::Vec,
-                                       SOff::SymmetricOffset{V,N,OTup}) where {V<:Integer,
-                                                                               N,
-                                                                               OTup,
-                                                                               Vec<:AbstractVector{V}}
-    offset_vec = get_offsets_vector(SOff)
-
-    offsets = ntuple(N) do dim
-        start, stop = span_by_dim(dim, SOff)
-        candidate_indices = oindices .>= start .&& oindices .<= stop
-        candidates = oindices[candidate_indices]
-        normalized_indices = offset_vec[candidates]
-
-        uniqueoffset = Vector(offset_to_vector(SOff.offsets[dim]))
-
-        out = vzeros(Vec, 0)
-
-        for uidx in uniqueoffset
-            if uidx == 0
-                continue
-            end
-
-            leftv = any(i -> i == uidx, normalized_indices)
-            rightv = any(i -> i == -uidx, normalized_indices)
-
-            if leftv && rightv
-                push!(out, uidx)
-            elseif leftv
-                @warn "Asymetrical offset detected: $uidx at dimension: $dim minifying step... Dropping offset"
-            elseif rightv
-                @warn "Asymetrical offset detected: $(-uidx) at dimension: $dim at minifying step... Dropping offset"
-            end
-        end
-
-        if test_if_zero(uniqueoffset, 1)
-            return AssemblyBaseOffset(out)
-        else
-            return AssemblyBaseOffset(NonZeroOffset, out)
-        end
-    end
-
-    SymmetricOffset(offsets)
-end
-
-export BaseOffset, SymmetricOffset, AssemblyBaseOffset, AssemblySymmetricOffset,
-       apply_offsets
+export BaseOffset, SymmetricOffset, OffsetNonZero, OffsetAllZero, OffsetUniqueZero,
+       GenerateOffset, apply_offsets!, infer_minimal_offsets,
+       extract_all_symmetric_offsets, core_circulant_matrix_format_COO

@@ -19,6 +19,7 @@ include("Solver/Backend/BackendTypes.jl")
 #include("FiniteDifferences/FiniteDifferenceTypes.jl")
 
 #Methods and declarations
+include("TupleSort/TupleSort.jl")
 include("AbstractMesh/AbstractMesh.jl")
 include("Grid/Grid.jl")
 include("SpaceDiscretization/SpaceDiscretization.jl")
