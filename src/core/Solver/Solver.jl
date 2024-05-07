@@ -16,6 +16,7 @@ function DefaultSolver(::Type{ComputeBackend},
                  zero(IntType),
                  false,
                  "/data",
+                 NormBased(ComputeBackend),
                  (true, IntType(5)),
                  (false, zero(IntType), zero(IntType)))
 end
@@ -88,9 +89,10 @@ function update_component!(SP::SchrodingerProblem{PDEq,SolverConf,MethodT,Storag
         @. b_temp = stage1 * stage2
         stage1 .= opA * b_temp
         @. b_temp = -τ * stage1 + b0_temp
-        gmres!(SolverMem, opB, b_temp; M = preB,atol=solver_params.atol*1e-1, rtol=solver_params.rtol*1e-1)
-        copy!(stage2,zₗ)
-        copy!(zₗ,SolverMem.x )
+        gmres!(SolverMem, opB, b_temp; M = preB, atol = solver_params.atol * 1e-1,
+               rtol = solver_params.rtol * 1e-1)
+        copy!(stage2, zₗ)
+        copy!(zₗ, SolverMem.x)
         @. stage1 = stage2 - zₗ
 
         pdiffn = ndiff
@@ -105,18 +107,143 @@ function update_component!(SP::SchrodingerProblem{PDEq,SolverConf,MethodT,Storag
     nothing
 end
 
+function update_component!(PDE, Method, Mem, Stats,
+                           style::NormBased{IntType,FloatType},
+                           component_index::IntType, τ::FloatType,
+                           σ::FloatType) where {IntType,FloatType}
+    grid_measure = sqrt(measure(Method.Mesh))
+    solved = false
+
+    #Memory temporary arrays
+    current_state = Mem.current_state
+    ψ = view(current_state, :, component_index)
+    zₗ = Mem.component_temp
+    #dst src
+    copy!(zₗ, ψ)
+
+    current_state_abs2 = Mem.current_state_abs2
+    temporary_abs2 = Mem.temp_state_abs2
+
+    stage1 = Mem.stage1 #Is assumed that the norm of stage1 is the norm of the difference
+    stage2 = Mem.stage2
+
+    b0_temp = Mem.b0_temp
+    b_temp = Mem.b_temp
+
+    SolverMem = Mem.solver_memory
+    #End of Memory temporary arrays
+
+    #Method operators
+    solver_params = Method.linear_solve_params
+    Kernel = Method.Kernel[(σ, τ)]
+
+    opC = Kernel.opC
+    opB = Kernel.opB
+    preB = Kernel.preB
+    opA = Mem.opA
+    #End of Method operators
+
+    #N optimized in PDE for easy calculations
+    N = get_optimized(PDE)
+    #End of N optimized
+
+    b0_temp = opC * ψ
+    for l in 1:(style.max_steps)
+        @. current_state_abs2 = abs2(current_state)
+        @. temporary_abs2 = abs2(zₗ)
+        @. stage1 = zₗ + ψ
+        stage2 .= N(current_state_abs2, temporary_abs2, component_index)
+        @. b_temp = stage1 * stage2
+        stage1 .= opA * b_temp
+        @. b_temp = -τ * stage1 + b0_temp
+        gmres!(SolverMem, opB, b_temp; M = preB, atol = get_atol(solver_params),
+               rtol = get_rtol(solver_params),
+               itmax = get_max_iterations(solver_params))
+        update_solver_info!(Stats, SolverMem.timer, SolverMem.niter)
+
+        copy!(stage2, zₗ)
+        copy!(zₗ, SolverMem.x)
+        @. stage1 = stage2 - zₗ
+
+        znorm = grid_measure * norm(stage1)
+        solved = znorm <= style.atol + style.rtol * znorm
+        if solved
+            break
+        end
+    end
+    copy!(ψ, zₗ)
+
+    if !solved
+        @warn "Convergence not reached in $(style.max_steps) iterations..."
+    end
+    nothing
+end
+
+function update_component!(PDE, Method, Mem, Stats, style::FixedSteps{IntType},
+                           component_index::IntType, τ::FloatType,
+                           σ::FloatType) where {IntType,FloatType}
+
+    #Memory temporary arrays
+    current_state = Mem.current_state
+    ψ = view(current_state, :, component_index)
+    zₗ = Mem.component_temp
+    #dst src
+    copy!(zₗ, ψ)
+
+    current_state_abs2 = Mem.current_state_abs2
+    temporary_abs2 = Mem.temp_state_abs2
+
+    stage1 = Mem.stage1 #Is assumed that the norm of stage1 is the norm of the difference
+    stage2 = Mem.stage2
+
+    b0_temp = Mem.b0_temp
+    b_temp = Mem.b_temp
+
+    SolverMem = Mem.solver_memory
+    #End of Memory temporary arrays
+
+    #Method operators
+    solver_params = Method.linear_solve_params
+    Kernel = Method.Kernel[(σ, τ)]
+
+    opC = Kernel.opC
+    opB = Kernel.opB
+    preB = Kernel.preB
+    opA = Mem.opA
+    #End of Method operators
+
+    #N optimized in PDE for easy calculations
+    N = get_optimized(PDE)
+    #End of N optimized
+
+    b0_temp = opC * ψ
+    for _ in 1:(style.nsteps)
+        @. current_state_abs2 = abs2(current_state)
+        @. temporary_abs2 = abs2(zₗ)
+        @. stage1 = zₗ + ψ
+        stage2 .= N(current_state_abs2, temporary_abs2, component_index)
+        @. b_temp = stage1 * stage2
+        stage1 .= opA * b_temp
+        @. b_temp = -τ * stage1 + b0_temp
+        gmres!(SolverMem, opB, b_temp; M = preB, atol = get_atol(solver_params),
+               rtol = get_rtol(solver_params),
+               itmax = get_max_iterations(solver_params))
+        copy!(zₗ, SolverMem.x)
+        update_solver_info!(Stats, SolverMem.timer, SolverMem.niter)
+    end
+    copy!(ψ, zₗ)
+end
+
 function step!(SP::SchrodingerProblem{PDEq,SolverConf,Method,Storage,Statistics}) where {PDEq,
                                                                                          SolverConf,
                                                                                          Method,
                                                                                          Storage,
                                                                                          Statistics}
-    
-
     σ_forward = get_σ(SP.PDE)
     σ_backward = reverse(σ_forward)
 
     time_substeps = SP.Method.time_collection
-    
+
     start_timer = time()
     for τ in time_substeps
         #Forward

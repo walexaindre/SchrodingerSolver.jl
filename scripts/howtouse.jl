@@ -42,6 +42,8 @@ Mesh = PeriodicGrid(CPUBackendF64,PDE,0.1,(100,100))
 
 Params = DefaultSolver(CPUBackendF64,2)
 
+
+
 Method,Mem = PaulMethod1(CPUBackendF64,PDE,Mesh,Params)
 
 evaluate_ψ(PDE,Mesh,Mem)

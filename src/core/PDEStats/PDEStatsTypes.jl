@@ -8,10 +8,12 @@ mutable struct RuntimeStats{IntType,FloatType,ArrayType<:AbstractArray{FloatType
     const system_energy::ArrayType
     const system_power::Power
     const step_time::ArrayType
-    const first::IntType
-    const last::IntType
-    const step::IntType
+    const solver_time::ArrayType
+    const solver_iterations::ArrayType
 
-    current_iter::IntType
+    const log_frequency::IntType
+    log_data::Bool
+    current_iteration::IntType
+    store_index::IntType
 end
 

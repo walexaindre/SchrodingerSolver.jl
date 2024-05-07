@@ -79,6 +79,31 @@
     nothing
 end
 
+@inline function evaluate_ψ(SPDE::SchrodingerPDENonPolynomic{N,Tv,MComp,Potential},P::PGrid,Memory) where {N,Tv,MComp,Potential,PGrid<:PeriodicGrid}
+    cstate = Memory.current_state
+    points = collect_points(P)|>typeof(cstate)
+    for i in 1:ncomponents(SPDE)
+        ψ_ = view(cstate,:,i)
+        func = get_ψ(SPDE,i)
+        ψ_ .= func(points)
+    end
+    nothing
+end
+
 @inline ncomponents(SPDE::PDEeq) where {PDEeq<:SchrodingerPDE} = length(SPDE.components)
+
+@inline function estimate_timesteps(SPDE::SchrodingerPDEPolynomic{N,Tv,MComp,Potential,Optimized},P::PGrid) where {N,Tv,MComp,Potential,Optimized,PGrid<:PeriodicGrid} 
+    τ = P.τ
+    T = get_time_boundary(SPDE)
+    rank = 0:τ:T
+    return length(rank)-1
+end
+
+@inline function estimate_timesteps(SPDE::SchrodingerPDENonPolynomic{N,Tv,MComp,Potential},P::PGrid) where {N,Tv,MComp,Potential,PGrid<:PeriodicGrid} 
+    τ = P.τ
+    T = get_time_boundary(SPDE)
+    rank = 0:τ:T
+    return length(rank)-1
+end
 
 export get_boundary,get_component,get_σ,get_f,get_ψ,get_field,get_time_boundary,ncomponents,get_optimized,evaluate_ψ

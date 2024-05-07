@@ -15,13 +15,13 @@ abstract type AbstractLinearSolver end
 struct IterativeLinearSolver{IntType,FloatType}<:AbstractLinearSolver
     rtol::FloatType
     atol::FloatType
-    max_iteration::IntType
+    max_iterations::IntType
 end
 
-struct DirectLinearSolver
+struct DirectLinearSolver<:AbstractLinearSolver
 end
 
-abstract type AbstractSolverMethod end
+abstract type AbstractSolverMethod{FloatType} end
 
 struct Kernel{LinOp1,LinOp2,LinOp3}
     opB::LinOp1
@@ -29,13 +29,7 @@ struct Kernel{LinOp1,LinOp2,LinOp3}
     opC::LinOp3
 end
 
-struct PaulMethod{FloatType,Grid,TKernel,ItSolver,StoppingCriteria,ItSolver2,TTime}
-    Mesh::Grid
-    Kernel::TKernel
-    linear_solve_params::ItSolver
-    stopping_criteria::StoppingCriteria
-    preconditioner_drop_tol::FloatType
-    preconditioner_solve_params::ItSolver2
-    time_collection::TTime
-end
+abstract type MethodProperty end
 
+struct IsDirect<:MethodProperty end
+struct IsIterative<:MethodProperty end
