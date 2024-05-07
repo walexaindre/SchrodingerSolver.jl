@@ -8,7 +8,7 @@ CUDA.allowscalar(false)
 A = GenerateOffset(OffsetUniqueZero,1, (1:2,1:3))
 
 PA = PeriodicAbstractMesh(Int, (8,8))
-Grid = PeriodicGrid(Int,Float64,1.0,(1:0.5:4,1:0.5:4))
+Grid = PeriodicGrid(Int,Float64,1.0,(1:0.5:4.5,1:0.5:4.5))
 
 SI,SJ,SV = core_circulant_matrix_format_COO(collect(1:length(A)),A,PA)
 sparse(SI,SJ,SV)
@@ -63,16 +63,17 @@ end
 
 AI,AJ,AV = get_A_format_COO(Float64, PA, (:ord4,:ord4))
 
-DI,DJ,DV = get_D_format_IJV(Float64, Grid, (:ord4,:ord4))
+DI,DJ,DV = get_D_format_COO(Float64, Grid, (:ord4,:ord4))
 
 sparsitypattern(DI,DJ,DV)
 
 
-Z=sparse(AI,AJ,AV)
+Z=sparse(AI,AJ,AV|>Vector{ComplexF64})
 BI,BJ,BV = drop(Z,PA,0.000001)
 sparsitypattern(AI,AJ,AV)
 f=Figure(size=(800,800))
 MA = sparse(AI,AJ,AV)
+MD = sparse(DI,DJ,DV)
 kron(MA,MA)
 ax = Axis(f[1,1])
 hidedecorations!(ax)
@@ -98,3 +99,7 @@ for i in  CartesianIndices(PA)
 end
 f
 sparsitypattern(rows,cols,vals)
+
+rms = GmresSolver(Z,ones(ComplexF64,size(Z,1)))
+
+rs,rf =gmres(Z,ones(ComplexF64,size(Z,1)))

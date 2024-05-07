@@ -29,12 +29,13 @@ struct Kernel{LinOp1,LinOp2,LinOp3}
     opC::LinOp3
 end
 
-struct PaulMethod{FloatType,Grid,TKernel,ItSolver,StoppingCriteria,ItSolver2}
+struct PaulMethod{FloatType,Grid,TKernel,ItSolver,StoppingCriteria,ItSolver2,TTime}
     Mesh::Grid
     Kernel::TKernel
     linear_solve_params::ItSolver
     stopping_criteria::StoppingCriteria
     preconditioner_drop_tol::FloatType
     preconditioner_solve_params::ItSolver2
+    time_collection::TTime
 end
 

@@ -45,12 +45,12 @@ function PaulMethod1(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
     #Initialize basic structures
     Mesh = PeriodicAbstractMesh(Grid)
 
-    AI, AJ, AV = get_A_format_IJV(FloatType, Mesh, Conf.space_order)
-    DI, DJ, DV = get_D_format_IJV(FloatType, Grid, Conf.space_order)
+    AI, AJ, AV = get_A_format_COO(FloatType, Mesh, Conf.space_order)
+    DI, DJ, DV = get_D_format_COO(FloatType, Grid, Conf.space_order)
 
-    opA = sparse(AI, AJ, AV)
+    opA = sparse(AI, AJ, AV|>VectorComplexType)
 
-    opD = sparse(DI, DJ, DV)
+    opD = sparse(DI, DJ, DV|>VectorComplexType)
 
     preAI, preAJ, preAV = drop(opA, Mesh, preconditioner_drop_tol)
 
@@ -62,7 +62,10 @@ function PaulMethod1(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
     σset = Set(get_σ(PDE))
     TimeMultipliers = Grid.τ * coefficients(time_comp)
 
+    time_substeps = Tuple(Grid.τ * collect(time_comp))
+
     dictionary_keys = Array{Tuple{FloatType,FloatType},1}(undef, 0)
+    
     sizehint!(dictionary_keys, length(σset) * length(TimeMultipliers))
 
     dictionary_values = Array{Kernel{SparseMatrixCSC{ComplexType,IntType},
@@ -73,9 +76,10 @@ function PaulMethod1(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
 
     for (σ, βτ) in product(σset,
                            TimeMultipliers)
-        opB = (4im * opA + βτ * σ * D)
-        opC = (4im * opA - βτ * σ * D)
-        preB = drop(opB, Mesh, preconditioner_drop_tol)
+        opB = (4im * opA + βτ * σ * opD)
+        opC = (4im * opA - βτ * σ * opD)
+        preBI, preBJ, preBV = drop(opB, Mesh, preconditioner_drop_tol)
+        preB = sparse(preBI, preBJ, preBV)
 
         Ker = Kernel(opB, preB, opC)
 
@@ -86,11 +90,19 @@ function PaulMethod1(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
     KernelDict = Dictionary(dictionary_keys, dictionary_values)
     #Initialize memory and Method
     Memory = initialize_krylov_memory(ComputeBackend, PDE, Mesh, opA, preA, opD)
-    Method = PaulMethod(Mesh, KernelDict, linear_solve_params, stopping_criteria,
+    Method = PaulMethod(Grid, KernelDict, linear_solve_params, stopping_criteria,
                         preconditioner_drop_tol,
-                        preconditioner_solve_params)
+                        preconditioner_solve_params,time_substeps)
 
     Method, Memory
 end
 
-export PaulMethod1
+function Base.show(io::IO,
+                   s::PaulMethod{FloatType,Grid,TKernel,ItSolver,StoppingCriteria,
+                                 ItSolver2}) where {FloatType,Grid,TKernel,ItSolver,
+                                                    StoppingCriteria,ItSolver2}
+    println(io,
+            "$(typeof(s))")
+end
+
+export PaulMethod1, IterativeLinearSolver, NormBased

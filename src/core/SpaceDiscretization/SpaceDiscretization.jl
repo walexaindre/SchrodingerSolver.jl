@@ -174,11 +174,11 @@ function get_A_format_COO(::Type{T}, Mesh::AM,
     findnz(A)
 end
 
-function get_D_format_COO(::Type{T}, Grid::AG,
+function get_D_format_COO(::Type{Tv}, Grid::AG,
                           Order::NTuple{N,Symbol}) where {N,
-                                                          T<:AbstractFloatOrRational,
+                                                          Tv<:AbstractFloatOrRational,
                                                           AG<:AbstractGrid{NTuple{N,
-                                                                                  T},
+                                                                                  Tv},
                                                                            N}}
     if N > 3
         throw(ArgumentError("Only 1D, 2D and 3D grids are supported..."))
@@ -188,8 +188,8 @@ function get_D_format_COO(::Type{T}, Grid::AG,
     V = typeof(Mesh.dims[1])
     submeshes = extract_every_dimension(Mesh)
 
-    temp = Vector{SparseMatrixCSC{T,V}}(undef, 0)
-    temp_A = Vector{SparseMatrixCSC{T,V}}(undef, 0)
+    temp = Vector{SparseMatrixCSC{Tv,V}}(undef, 0)
+    temp_A = Vector{SparseMatrixCSC{Tv,V}}(undef, 0)
 
     for (h, ord, submesh) in zip(Grid.h, Order, submeshes)
         SD = get_coefficients(SpaceDiscretization, ord)
@@ -198,7 +198,7 @@ function get_D_format_COO(::Type{T}, Grid::AG,
             throw(ArgumentError("Order not found in SpaceDiscretizationDefaults... Please use register function to add new orders."))
         end
 
-        values = [zero(T)]
+        values = [zero(Tv)]
         offsets = zeros(V, 0)
         hsqr = h^2
 
@@ -232,7 +232,7 @@ function get_D_format_COO(::Type{T}, Grid::AG,
         count = size(values, 1)
         space_usage = count * length(submesh)
 
-        sym_offsets = AssemblySymmetricOffset(UniqueZeroOffset, (offsets,))
+        sym_offsets = GenerateOffset(OffsetUniqueZero, 1, (offsets,))
 
         _I = zeros(Int64, space_usage) #row idx
         _J = zeros(Int64, space_usage) #column idx
@@ -245,15 +245,15 @@ function get_D_format_COO(::Type{T}, Grid::AG,
             _J[section] .= apply_offsets(submesh, CartesianIndex(idx), sym_offsets)
         end
         push!(temp, sparse(_I, _J, _V))
-        AI,AJ,AV = get_A_format_IJV(T, submesh, ord)
+        AI,AJ,AV = get_A_format_COO(Tv, submesh, ord)
         push!(temp_A,sparse(AI,AJ,AV))
     end
 
     reverse!(temp)
 
     #1D Dx
-    #2D => kron(Iy, Dx) + kron(Dy, Ix)
-    #3D => kron(Iz, Iy, Dx) + kron(Iz, Dy, Ix) + kron(Dz, Iy, Ix)
+    #2D => kron(Ay, Dx) + kron(Dy, Ax)
+    #3D => kron(Az, Ay, Dx) + kron(Az, Dy, Ax) + kron(Dz, Ay, Ax)
 
     if N == 1
         return findnz(temp[1])

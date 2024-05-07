@@ -57,12 +57,12 @@ end
 
 function drop_kron(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
      rtol::TolT = 700 * eps(real(eltype(M))),
-     atol::TolT = 700 * eps(real(eltype(M)))) where {N,V<:Integer,
+     atol::TolT = 700 * eps(real(eltype(M)))) where {N,Ti<:Integer,
                                                      Tv<:AbstractFloat,
                                                      TolT<:AbstractFloat,
-                                                     RTup<:TupleOrRange{V},
-                                                     Matrix<:AbstractArray{Tv},
-                                                     AM<:AbstractMesh{V,N}}
+                                                     RTup<:TupleOrRange{Ti},
+                                                     Matrix,
+                                                     AM<:AbstractMesh{Ti,N}}
 
     if size(M, 1) != size(M, 2)
         throw(DimensionMismatch("Matrix must be square"))

@@ -4,7 +4,7 @@ struct ComponentPower{FloatType,ArrayType<:AbstractArray{FloatType}} <: Abstract
     power::ArrayType
 end
 
-mutable struct RuntimeStats{IntType,FloatType,ArrayType<:AbstractArray{FloatType},Power<:ComponentPower{FloatType,ArrayType}} <: AbstractStats{IntType,FloatType,ArrayType} 
+mutable struct RuntimeStats{IntType,FloatType,ArrayType<:AbstractArray{FloatType},Power<:Tuple{Vararg{ComponentPower{FloatType,ArrayType}}}} <: AbstractStats{IntType,FloatType,ArrayType} 
     const system_energy::ArrayType
     const system_power::Power
     const step_time::ArrayType
@@ -14,3 +14,4 @@ mutable struct RuntimeStats{IntType,FloatType,ArrayType<:AbstractArray{FloatType
 
     current_iter::IntType
 end
+

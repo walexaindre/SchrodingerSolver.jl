@@ -105,6 +105,11 @@ end
     return repeat(A.ranges[col]; inner = inner_elems, outer = outer_elems)
 end
 
+function collect_points(A::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N}
+
+    foldl(hcat,(A[:,idx] for idx in 1:N))
+end
+
 @inline Base.convert(::Type{PeriodicAbstractMesh{V,N}}, A::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N} = PeriodicAbstractMesh(V,
                                                                                                                                                           A.dims)
 

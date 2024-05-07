@@ -67,3 +67,39 @@ function Makie.plot!(p::Stencil)
 end
 
 export stencil
+
+
+
+@recipe(ApproximateSparsityPattern,I,J,V) do scene
+    Attributes(
+        colorscale=theme(scene,:colorscale),
+        colormap=theme(scene,:colormap),
+        inspectable = theme(scene, :inspectable),
+        visible = theme(scene, :visible)
+    )
+end
+
+function convert_arguments(::Type{<:ApproximateSparsityPattern}, I, J, V)
+    return I,J,V
+end
+
+function Makie.plot!(p::ApproximateSparsityPattern)
+
+    updated_values = copy(p.V[])
+    updated_values = map(abs,updated_values)
+    updated_values = map(x->round(x,sigdigits=2),updated_values)
+
+
+    unique_values = unique(updated_values)
+    #subs = unique_values .=> 1:length(unique_values)
+    #replace!(updated_values,subs...)
+
+    rect = lift(p.I,p.J) do I,J
+        ext = extrema(J)
+        [Rect(i-1,ext[2]-j,1,1) for (i,j) in zip(I,J)]
+        
+    end
+    poly!(p,rect, colorscale=p.colorscale , colorrange=(minimum(unique_values),maximum(unique_values)) ,color=updated_values,colormap=p.colormap,inspectable=p.inspectable,visible=p.visible)
+end
+
+export approximatesparsitypattern

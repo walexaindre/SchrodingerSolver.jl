@@ -68,4 +68,17 @@
 "Finish time for the Schrodinger PDE"
 @inline get_time_boundary(SPDE::SchrodingerPDENonPolynomic{N,Tv,MComp,Potential}) where {N,Tv,MComp,Potential} = SPDE.T
 
+@inline function evaluate_ψ(SPDE::SchrodingerPDEPolynomic{N,Tv,MComp,Potential,Optimized},P::PGrid,Memory) where {N,Tv,MComp,Potential,Optimized,PGrid<:PeriodicGrid}
+    cstate = Memory.current_state
+    points = collect_points(P)|>typeof(cstate)
+    for i in 1:ncomponents(SPDE)
+        ψ_ = view(cstate,:,i)
+        func = get_ψ(SPDE,i)
+        ψ_ .= func(points)
+    end
+    nothing
+end
+
 @inline ncomponents(SPDE::PDEeq) where {PDEeq<:SchrodingerPDE} = length(SPDE.components)
+
+export get_boundary,get_component,get_σ,get_f,get_ψ,get_field,get_time_boundary,ncomponents,get_optimized,evaluate_ψ

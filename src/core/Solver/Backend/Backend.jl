@@ -148,13 +148,20 @@ function initialize_krylov_memory(::Type{ComputeBackend}, PDE::PDEq, Mesh,
                                                                                                     VectorType,
                                                                                                     VectorComplexType,
                                                                                                     MatrixType,
-                                                                                                    MatrixComplexType},PDEq<:SchrodingerPDE{N}}
+                                                                                                    MatrixComplexType},
+                                                                    PDEq<:SchrodingerPDE{N}}
     element_count = length(Mesh)
-    ncomponents = ncomponents(PDE)
+    ncomp = ncomponents(PDE)
 
-    state = vzeros(VectorComplexType, (element_count, ncomponents))
+    mem = vzeros(VectorComplexType, element_count)
+    state = vzeros(MatrixComplexType, (element_count, ncomp))
 
-    BackendMemory(state, mem, opA, preA, opD, copy(mem), copy(mem),
-                  SolverStorage(element_count, element_count, memory_size,
-                                typeof(mem)))
+    BackendMemory(state, copy(state), mem, copy(mem), copy(mem), copy(mem),
+                  copy(mem), copy(mem), opA, preA, opD,
+                  GmresSolver(length(mem), length(mem), memory_size, typeof(mem)))
 end
+
+
+#function Base.show(io::IO, BMem::BackendMemory) where {BackendMemory}
+#    println(io, "$(typeof(BMem))")
+#end
