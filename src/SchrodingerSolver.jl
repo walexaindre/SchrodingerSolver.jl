@@ -1,5 +1,6 @@
 module SchrodingerSolver
 using Dates
+using Unitful
 using CUDA
 using CUDA.CUSPARSE
 

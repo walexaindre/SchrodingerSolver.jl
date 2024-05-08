@@ -71,7 +71,8 @@ end
         energy -= σ * dot(comp, Mem.solver_memory.x)
     end
     stage1 .= F(state_abs2)
-    energy += sum(stage1; dims = 1)[1]
+    vecenergy = sum(stage1; dims = 1)|>Vector
+    energy += vecenergy[1]
     real(energy) * measure(Grid)
 end
 
@@ -91,6 +92,8 @@ function update_power!(stats::Stats, power,
                        idx::IntType) where {IntType<:Integer,
                                             FloatType<:AbstractFloat,
                                             Stats<:RuntimeStats{IntType,FloatType}}
+    power = power|>Vector
+
     if !islocked(stats)
         for comp in 1:length(stats.system_power)
             stats.system_power[comp][idx] = power[comp]

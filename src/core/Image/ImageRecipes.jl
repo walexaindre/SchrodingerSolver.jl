@@ -181,9 +181,11 @@ function Makie.plot!(Sys::SystemND)
 
     current_state = Memory.current_state
 
-    points = abs2.(current_state)
+    points = abs2.(current_state) 
 
     points = sum(points,dims=2)
+    
+    points = points |> Array
 
     z = reshape(points,size(Grid))
     x = get_range(Grid,1)
@@ -193,3 +195,132 @@ function Makie.plot!(Sys::SystemND)
 end
 
 export systemnd
+
+
+@recipe(ExecutionTime,Stats) do scene
+    Attributes(
+        color = theme(scene,:color),
+        colormap = theme(scene,:colormap),
+        inspectable = theme(scene, :inspectable),
+        visible = theme(scene, :visible)
+    )
+end
+
+function Makie.plot!(Sys::ExecutionTime)
+    Stats = Sys[1]
+    τ = Stats[].τ
+
+    points = Observable(Float64[])    
+    timerange = Observable(range(τ,step=τ,length=4))
+
+    function update_plot(Stats)
+        empty!(points[])
+        maxindex = Stats[].store_index-1
+        timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
+
+        append!(points[],Stats[].step_time[1:maxindex])
+    end
+
+    update_plot(Stats)
+    
+    Makie.scatter!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
+    Sys
+
+end
+
+export executiontime
+
+
+@recipe(_SolverTime,Stats,ounit) do scene
+    Attributes(
+        color = theme(scene,:color),
+        colormap = theme(scene,:colormap),
+        inspectable = theme(scene, :inspectable),
+        visible = theme(scene, :visible)
+    )
+end
+
+function transform(x,unit)
+    r = uconvert(unit,x*u"s")
+    r = round(typeof(r),r,digits=0)
+    r = Quantity{Int64}[r][1]
+end
+
+function Makie.plot!(Sys::_SolverTime)
+    Stats = Sys[1]
+    τ = Stats[].τ
+    outputunit = Sys[2][]
+
+    points = Observable(Float64[])    
+    timerange = Observable(range(τ,step=τ,length=4))
+    avg = Observable(0.0)
+    function update_plot(Stats)
+        empty!(points[])
+        maxindex = Stats[].store_index-1
+        timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
+        append!(points[],Stats[].solver_time[1:maxindex])
+        avg[] = sum(points[])/maxindex
+    end
+
+    update_plot(Stats)
+    
+    Makie.scatter!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
+    Makie.ablines!(Sys,avg[],0,color=:red,linestyle=:dash,linewidth=2)
+    Sys
+
+end
+
+
+function solvertime(Stats,ounit)
+
+
+    p = _solvertime(Stats,ounit)
+
+    p.axis.xlabel = "τ"
+    p.axis.ygridvisible = false
+    p.axis.xgridvisible = false
+    p.axis.yminorgridvisible = false
+    p.axis.ylabel = "Time"
+    p.axis.yticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xlabelsize = p.axis.ylabelsize = 12
+    p.axis.ytickformat = xs -> [string(transform(v,ounit)) for v in xs]
+    p
+    
+end
+
+
+export solvertime
+
+@recipe(SolverIterations,Stats) do scene
+    Attributes(
+        color = theme(scene,:color),
+        colormap = theme(scene,:colormap),
+        inspectable = theme(scene, :inspectable),
+        visible = theme(scene, :visible)
+    )
+end
+
+function Makie.plot!(Sys::SolverIterations)
+    Stats = Sys[1]
+    τ = Stats[].τ
+
+    points = Observable(Float64[])    
+    timerange = Observable(range(τ,step=τ,length=4))
+
+    function update_plot(Stats)
+        empty!(points[])
+        maxindex = Stats[].store_index-1
+        timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
+
+        append!(points[],Stats[].solver_iterations[1:maxindex])
+    end
+
+    update_plot(Stats)
+    
+    Makie.scatter!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
+    Sys
+
+end
+
+export solveriterations

@@ -25,7 +25,7 @@ function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
     Ind = ntuple(Returns(1), N)
 
     #Generate a list of offsets for given ranges.
-    offsets = GenerateOffset(OffsetUniqueZero,1, GenerateRank(offset_ranges, N))
+    offsets = GenerateOffset(OffsetUniqueZero, 1, GenerateRank(offset_ranges, N))
 
     #Apply offset list to first element (1,1,...,1) of the mesh.
     one_idx_offset = apply_offsets(AMesh, Ind, offsets)
@@ -47,7 +47,6 @@ function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
 
     #Undropped offset positions.
     undropped_offset_positions = findall(in(nonpruned_index), one_idx_offset)
-
     #Infer offset values at used offset positions.
     minimal_offset = infer_minimal_offsets(undropped_offset_positions, offsets)
     minimal_index = apply_offsets(AMesh, Ind, minimal_offset)
@@ -56,14 +55,14 @@ function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
 end
 
 function drop_kron(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
-     rtol::TolT = 700 * eps(real(eltype(M))),
-     atol::TolT = 700 * eps(real(eltype(M)))) where {N,Ti<:Integer,
-                                                     Tv<:AbstractFloat,
-                                                     TolT<:AbstractFloat,
-                                                     RTup<:TupleOrRange{Ti},
-                                                     Matrix,
-                                                     AM<:AbstractMesh{Ti,N}}
-
+                   rtol::TolT = 700 * eps(real(eltype(M))),
+                   atol::TolT = 700 * eps(real(eltype(M)))) where {N,Ti<:Integer,
+                                                                   Tv<:AbstractFloat,
+                                                                   TolT<:AbstractFloat,
+                                                                   RTup<:TupleOrRange{Ti},
+                                                                   Matrix,
+                                                                   AM<:AbstractMesh{Ti,
+                                                                                    N}}
     if size(M, 1) != size(M, 2)
         throw(DimensionMismatch("Matrix must be square"))
     end

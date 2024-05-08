@@ -1,5 +1,7 @@
 using SchrodingerSolver
 using GLMakie
+using CUDA
+device!(1)
 
 const α₁ = 1.0
 const α₂ = 1.0
@@ -56,7 +58,7 @@ Params = DefaultSolver(CPUBackendF64,2)
 
 
 Method,Mem = PaulMethod1(CPUBackendF64,PDE,Mesh,Params)
-
+Method,Mem = PaulMethod3(CUDABackendF64,PDE,Mesh,Params)
 
 Stats = initialize_stats(Vector{Float64},PDE,Mesh,Mem,IterativeLinearSolver(CPUBackendF64),1)
 
@@ -94,10 +96,18 @@ surface!(ax3,Mesh[:,1],Mesh[:,2],abs2.(Mem.current_state[:,1]))
 g
 
 
-record(g,"file.mp4",1:80,framerate = 5) do _
+Makie.record(g,"file.mp4",1:80,framerate = 5) do _
     empty!(ax3)
-    @time for i in 1:5
+    CUDA.@time for i in 1:5
         step!(Problem)
     end
     systemnd!(ax3,Mem,Mesh)
 end
+
+
+### Tuning figure parameters
+
+f = solvertime(Stats,u"ms")
+save("solvertime.png",f)
+
+f.figure[:size] = (800, 600)
