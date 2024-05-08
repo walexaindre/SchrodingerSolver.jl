@@ -126,7 +126,7 @@ function initialize_krylov_memory(::Type{ComputeBackend},
     state = vzeros(VectorComplexType, (element_count, ncomponents))
     mem = vzeros(VectorComplexType, element_count)
 
-    BackendMemory(state, mem, opA, preA, opD, copy(mem), copy(mem),
+    BackendMemory(state, copy(state), mem, copy(mem),copy(mem),copy(mem), copy(mem), copy(mem),opA, preA, opD,
                   SolverStorage(element_count, element_count, memory_size,
                                 typeof(mem)))
 end

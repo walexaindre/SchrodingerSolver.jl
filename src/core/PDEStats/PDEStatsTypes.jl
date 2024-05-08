@@ -10,8 +10,9 @@ mutable struct RuntimeStats{IntType,FloatType,ArrayType<:AbstractArray{FloatType
     const step_time::ArrayType
     const solver_time::ArrayType
     const solver_iterations::ArrayType
-
     const log_frequency::IntType
+    const τ::FloatType
+    const locked::Bool
     log_data::Bool
     current_iteration::IntType
     store_index::IntType

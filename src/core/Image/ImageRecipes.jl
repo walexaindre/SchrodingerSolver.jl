@@ -72,7 +72,7 @@ export stencil
 
 @recipe(ApproximateSparsityPattern,I,J,V) do scene
     Attributes(
-        colorscale=theme(scene,:colorscale),
+        colorscale=identity,
         colormap=theme(scene,:colormap),
         inspectable = theme(scene, :inspectable),
         visible = theme(scene, :visible)
@@ -103,3 +103,93 @@ function Makie.plot!(p::ApproximateSparsityPattern)
 end
 
 export approximatesparsitypattern
+
+
+@recipe(_SystemEnergy,Stats) do scene
+    Attributes(
+        comparewithstartup = true,
+        color = theme(scene,:color),
+        colormap = theme(scene,:colormap),
+        inspectable = theme(scene, :inspectable),
+        visible = theme(scene, :visible)
+    )
+end
+
+function toscientific(x)
+    result = @sprintf("%.1E",x)
+    splitres = split(result,"E")
+
+    rich("$(splitres[1])×10",superscript("$(splitres[2])"))
+end
+
+function Makie.plot!(p::_SystemEnergy)
+    Stats = p[1]
+    τ = Stats[].τ
+
+
+    comparewithzero = p.comparewithstartup
+    points = Observable(Float64[])    
+    timerange = Observable(range(0,step=τ,length=4))
+
+    function update_plot(Stats)
+        empty!(points[])
+        maxindex = Stats[].store_index-1
+        timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
+
+        if comparewithzero[]
+            append!(points[], cbrt.(calculate_diff_system_energy(Stats[])))
+        else
+            append!(points,Stats[].system_energy[1:maxindex])
+        end
+        
+    end
+
+    #Makie.Observables.onany(update_plot,Stats)
+
+    update_plot(Stats)
+    
+    Makie.scatter!(p,timerange,points,  color = :blue, colormap = p.colormap, inspectable = p.inspectable, visible = p.visible)
+    p
+end
+
+function systemenergy(Stats)
+    p = _systemenergy(Stats)
+    p.axis.yscale = Makie.pseudolog10
+    p.axis.xlabel = "τ"
+    #p.axis.ylabel = 
+    p.axis.ytickformat = xs -> [toscientific(v^3) for v in xs]
+    ylims!(p.axis,(cbrt(1e-17),cbrt(1e-12)))
+    p
+end
+
+
+export systemenergy
+
+
+@recipe(SystemND,Memory,Grid) do scene
+    Attributes(
+        colorscale=identity,
+        colormap=theme(scene,:colormap),
+        inspectable = theme(scene, :inspectable),
+        visible = theme(scene, :visible)
+    )
+end
+
+function Makie.plot!(Sys::SystemND)
+    Grid = Sys[2][]
+    Memory = Sys[1][]
+
+    current_state = Memory.current_state
+
+    points = abs2.(current_state)
+
+    points = sum(points,dims=2)
+
+    z = reshape(points,size(Grid))
+    x = get_range(Grid,1)
+    y = get_range(Grid,2)
+
+    surface!(Sys,x,y, z;colormap=Sys.colormap,inspectable=Sys.inspectable,visible=Sys.visible)
+end
+
+export systemnd

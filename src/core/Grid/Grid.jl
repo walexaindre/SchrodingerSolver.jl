@@ -105,6 +105,10 @@ end
     return repeat(A.ranges[col]; inner = inner_elems, outer = outer_elems)
 end
 
+function get_range(A::PeriodicGrid{V,T,R,N}, dim::V) where {V<:Integer,T<:Real,R<:AbstractRange{T},N}
+    A.ranges[dim]
+end
+
 function collect_points(A::PeriodicGrid{V,T,R,N}) where {V<:Integer,T<:Real,R<:AbstractRange{T},N}
 
     foldl(hcat,(A[:,idx] for idx in 1:N))

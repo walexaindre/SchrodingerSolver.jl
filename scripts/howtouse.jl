@@ -1,44 +1,55 @@
 using SchrodingerSolver
 using GLMakie
-const α = 1.5
-const β = -0.5
-const γ = α
 
-#Always define functions in a vectorial way
-function f1(x)
-    @views  α*x[:,1]+β*x[:,2]
+const α₁ = 1.0
+const α₂ = 1.0
+const σ₁₁ = 1.0
+const σ₂₂ = 1.0
+const σ₁₂ = 2.0/3.0
+const σ₂₁ = σ₁₂
+
+const T = 40.0
+
+const Ω = (-8.0,8.0) #Domain
+
+function f₁(x)
+    @. @views σ₁₁*x[:,1] + σ₁₂*x[:,2]
 end
 
-function f2(x)
-    @views β*x[:,1]+γ*x[:,2]
+function f₂(x)
+    @. @views σ₂₁*x[:,1] + σ₂₂*x[:,2]
 end
-
-function psi1(x)
-    @views 1/sqrt(pi)*exp.(-x[:,1].^2-x[:,2].^2)
-end
-
-function psi2(x)
-    1im*psi1(x)
-end
-
-C1 = SchrodingerPDEComponent(0.5,f1,psi1)
-C2 = SchrodingerPDEComponent(0.5,f2,psi1)
 
 function F(x)
-    @views 0.5*α*x[:,1].^2+0.5*γ*x[:,2].^2+β*x[:,1].*x[:,2]
+    @. @views 0.5*(σ₁₁*x[:,1]^2 + σ₂₂*x[:,2]^2) + σ₁₂*x[:,1]*x[:,2]
 end
 
+function ψ₁(x)
+    @. @views 1/sqrt(pi)*exp(-(x[:,1]-2.0)^2-(x[:,2]-2.0)^2)
+end
+
+function ψ₂(x)
+    @. @views 1/sqrt(pi)*exp(-(x[:,1]+2.0)^2-(x[:,2]+2.0)^2)
+end
+
+#x: 
+#-0.5r*σ₁₁ - 0.5x*σ₁₁ - y*σ₁₂
+#y: 
+#-0.5r*σ₂₂ - x*σ₁₂ - 0.5y*σ₂₂
 function N(prev,next,idx)
     if idx == 1
-        return -0.5*α*next-0.5*α*prev[:,1]-β*prev[:,2]
+        return @. @views -0.5*σ₁₁*next-0.5*σ₁₁*prev[:,1]-σ₁₂*prev[:,2]
     else
-        return -0.5*γ*next-β*prev[:,1]-0.5*γ*prev[:,2]
+        return @. @views -0.5*σ₂₂*next-σ₁₂*prev[:,1]-0.5*σ₂₂*prev[:,2]
     end
 end
 
-PDE = SchrodingerPDEPolynomic(((-8.0,8.0),(-8.0,8.0)),(C1,C2),F,N,40.0)
+C1 = SchrodingerPDEComponent(α₁,f₁,ψ₁)
+C2 = SchrodingerPDEComponent(α₂,f₂,ψ₂)
 
-Mesh = PeriodicGrid(CPUBackendF64,PDE,0.1,(100,100))
+PDE = SchrodingerPDEPolynomic((Ω,Ω),(C1,C2),F,N,T)
+
+Mesh = PeriodicGrid(CPUBackendF64,PDE,0.01,(100,100))
 
 Params = DefaultSolver(CPUBackendF64,2)
 
@@ -46,19 +57,17 @@ Params = DefaultSolver(CPUBackendF64,2)
 
 Method,Mem = PaulMethod1(CPUBackendF64,PDE,Mesh,Params)
 
-evaluate_ψ(PDE,Mesh,Mem)
 
-Stats = initialize_stats(Int64,Float64,Vector{Float64},ncomponents(PDE),4,1:3000)
-
-update_stats!(Stats,0.0,PDE,Mesh,Mem,Method.linear_solve_params)
+Stats = initialize_stats(Vector{Float64},PDE,Mesh,Mem,IterativeLinearSolver(CPUBackendF64),1)
 
 Problem = SchrodingerProblem(PDE,DefaultSolver(CPUBackendF64,2),Method,Mem,Stats)
 
 step!(Problem)
 
-for i in 1:300
+for i in 1:900
     step!(Problem)
 end
+
 
 
 #sA = Mem.current_state_abs2
@@ -78,5 +87,17 @@ f
 
 g = Figure(size = (800, 600))
 ax3 = Axis3(g[1, 1])
+systemnd!(ax3,Mem,Mesh)
+
+
 surface!(ax3,Mesh[:,1],Mesh[:,2],abs2.(Mem.current_state[:,1]))
 g
+
+
+record(g,"file.mp4",1:80,framerate = 5) do _
+    empty!(ax3)
+    @time for i in 1:5
+        step!(Problem)
+    end
+    systemnd!(ax3,Mem,Mesh)
+end

@@ -147,19 +147,20 @@ function update_component!(PDE, Method, Mem, Stats,
     N = get_optimized(PDE)
     #End of N optimized
 
-    b0_temp = opC * ψ
+    mul!(b0_temp,opC,ψ)
     for l in 1:(style.max_steps)
         @. current_state_abs2 = abs2(current_state)
         @. temporary_abs2 = abs2(zₗ)
         @. stage1 = zₗ + ψ
         stage2 .= N(current_state_abs2, temporary_abs2, component_index)
         @. b_temp = stage1 * stage2
-        stage1 .= opA * b_temp
+        mul!(stage1, opA, b_temp)
+
         @. b_temp = -τ * stage1 + b0_temp
         gmres!(SolverMem, opB, b_temp; M = preB, atol = get_atol(solver_params),
                rtol = get_rtol(solver_params),
                itmax = get_max_iterations(solver_params))
-        update_solver_info!(Stats, SolverMem.timer, SolverMem.niter)
+        update_solver_info!(Stats, SolverMem.stats.timer, SolverMem.stats.niter)
 
         copy!(stage2, zₗ)
         copy!(zₗ, SolverMem.x)
@@ -216,14 +217,14 @@ function update_component!(PDE, Method, Mem, Stats, style::FixedSteps{IntType},
     N = get_optimized(PDE)
     #End of N optimized
 
-    b0_temp = opC * ψ
+    mul!(b0_temp,opC,ψ)
     for _ in 1:(style.nsteps)
         @. current_state_abs2 = abs2(current_state)
         @. temporary_abs2 = abs2(zₗ)
         @. stage1 = zₗ + ψ
         stage2 .= N(current_state_abs2, temporary_abs2, component_index)
         @. b_temp = stage1 * stage2
-        stage1 .= opA * b_temp
+        mul!(stage1, opA, b_temp)
         @. b_temp = -τ * stage1 + b0_temp
         gmres!(SolverMem, opB, b_temp; M = preB, atol = get_atol(solver_params),
                rtol = get_rtol(solver_params),
@@ -234,11 +235,21 @@ function update_component!(PDE, Method, Mem, Stats, style::FixedSteps{IntType},
     copy!(ψ, zₗ)
 end
 
-function step!(SP::SchrodingerProblem{PDEq,SolverConf,Method,Storage,Statistics}) where {PDEq,
+function step!(SP::SchrodingerProblem{PDEq,SolverConf,Meth,Storage,Statistics}) where {PDEq,
                                                                                          SolverConf,
-                                                                                         Method,
+                                                                                         Meth,
                                                                                          Storage,
                                                                                          Statistics}
+
+    PDE = SP.PDE
+    Method = SP.Method
+    Memory = SP.Memory
+    Stats = SP.Stats
+    Conf = SP.Config
+    
+    Style = Conf.stopping_criteria
+
+
     σ_forward = get_σ(SP.PDE)
     σ_backward = reverse(σ_forward)
 
@@ -248,12 +259,12 @@ function step!(SP::SchrodingerProblem{PDEq,SolverConf,Method,Storage,Statistics}
     for τ in time_substeps
         #Forward
         for (component_index, σ) in enumerate(σ_forward)
-            update_component!(SP, component_index, τ, σ)
+            update_component!(PDE,Method,Memory,Stats, Style, component_index, τ, σ)
         end
         #Backward
 
         for (component_index, σ) in zip(length(σ_backward):-1:1, σ_backward)
-            update_component!(SP, component_index, τ, σ)
+            update_component!(PDE,Method,Memory,Stats, Style, component_index, τ, σ)
         end
     end
 

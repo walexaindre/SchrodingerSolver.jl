@@ -65,6 +65,7 @@ end
 KernelDict = Dictionary(dictionary_keys, dictionary_values)
 #Initialize memory and Method
 Memory = initialize_krylov_memory(ComputeBackend, PDE, Mesh, opA, preA, opD)
+
 Method = PaulMethod(Grid, KernelDict, linear_solve_params,
        preconditioner_drop_tol,
        preconditioner_solve_params,time_substeps)

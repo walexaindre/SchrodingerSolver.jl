@@ -1,4 +1,4 @@
-struct PaulMethod{FloatType,Grid,TKernel,ItSolver,StoppingCriteria,ItSolver2,TTime} <: AbstractSolverMethod{FloatType}
+struct PaulMethod{FloatType,Grid,TKernel,ItSolver,ItSolver2,TTime} <: AbstractSolverMethod{FloatType}
     Mesh::Grid
     Kernel::TKernel
     linear_solve_params::ItSolver
