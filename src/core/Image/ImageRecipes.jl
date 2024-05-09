@@ -197,7 +197,7 @@ end
 export systemnd
 
 
-@recipe(ExecutionTime,Stats) do scene
+@recipe(_ExecutionTime,Stats) do scene
     Attributes(
         color = theme(scene,:color),
         colormap = theme(scene,:colormap),
@@ -206,33 +206,53 @@ export systemnd
     )
 end
 
-function Makie.plot!(Sys::ExecutionTime)
+function Makie.plot!(Sys::_ExecutionTime)
     Stats = Sys[1]
     τ = Stats[].τ
 
     points = Observable(Float64[])    
     timerange = Observable(range(τ,step=τ,length=4))
+    avg = Observable(0.0)
 
     function update_plot(Stats)
         empty!(points[])
         maxindex = Stats[].store_index-1
         timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
-
         append!(points[],Stats[].step_time[1:maxindex])
+        avg[] = sum(points[])/maxindex
     end
 
     update_plot(Stats)
     
-    Makie.scatter!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
+    Makie.scatter!(Sys,timerange,points,  color = RGBf(0.0039,0.239216,0.5333) , colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
+    Makie.ablines!(Sys,avg[],0,color= RGBf(0.698,0.168,0.0745),linestyle=:dash,linewidth=2,fontsize=Sys.fontsize)
     Sys
 
 end
+
+function executiontime(Stats,ounit)
+    p=_executiontime(Stats,ounit,fontsize=50)
+
+    p.axis.xlabel = rich("t",subscript("n"))
+    p.axis.ygridvisible = false
+    p.axis.xgridvisible = false
+    p.axis.yminorgridvisible = false
+    p.axis.ylabel = "Time"
+    p.axis.yticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xlabelsize = p.axis.ylabelsize = 24
+    p.axis.xticklabelsize=p.axis.yticklabelsize=24
+    p.axis.ytickformat = xs -> [string(transform(v,ounit)) for v in xs]
+    p    
+end
+
 
 export executiontime
 
 
 @recipe(_SolverTime,Stats,ounit) do scene
     Attributes(
+        fontsize = theme(scene,:fontsize),
         color = theme(scene,:color),
         colormap = theme(scene,:colormap),
         inspectable = theme(scene, :inspectable),
@@ -265,28 +285,26 @@ function Makie.plot!(Sys::_SolverTime)
     update_plot(Stats)
     
     Makie.scatter!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
-    Makie.ablines!(Sys,avg[],0,color=:red,linestyle=:dash,linewidth=2)
+    Makie.ablines!(Sys,avg[],0,color=:red,linestyle=:dash,linewidth=2,fontsize=Sys.fontsize)
     Sys
 
 end
 
 
 function solvertime(Stats,ounit)
+    p=_solvertime(Stats,ounit,fontsize=50)
 
-
-    p = _solvertime(Stats,ounit)
-
-    p.axis.xlabel = "τ"
+    p.axis.xlabel = rich("t",subscript("n"))
     p.axis.ygridvisible = false
     p.axis.xgridvisible = false
     p.axis.yminorgridvisible = false
     p.axis.ylabel = "Time"
     p.axis.yticks = WilkinsonTicks(6,k_min=5)
     p.axis.xticks = WilkinsonTicks(6,k_min=5)
-    p.axis.xlabelsize = p.axis.ylabelsize = 12
+    p.axis.xlabelsize = p.axis.ylabelsize = 24
+    p.axis.xticklabelsize=p.axis.yticklabelsize=24
     p.axis.ytickformat = xs -> [string(transform(v,ounit)) for v in xs]
-    p
-    
+    p    
 end
 
 

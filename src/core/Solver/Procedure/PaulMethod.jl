@@ -74,7 +74,7 @@ function PaulMethod1(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
 end
 
 function PaulMethod2(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
-                     preconditioner_drop_tol = FloatType(1e-4),
+                     preconditioner_drop_tol = FloatType(1e-5),
                      preconditioner_solve_params = IterativeLinearSolver(ComputeBackend),
                      linear_solve_params = IterativeLinearSolver(ComputeBackend)) where {N,
                                                                                          IntType,
@@ -98,13 +98,13 @@ function PaulMethod2(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
     AI, AJ, AV = get_A_format_COO(FloatType, Mesh, Conf.space_order)
     DI, DJ, DV = get_D_format_COO(FloatType, Grid, Conf.space_order)
 
-    opA = sparsecsr(AI, AJ, VectorComplexType(AV))
+    opA = sparse(AI, AJ, VectorComplexType(AV))
 
-    opD = sparsecsr(DI, DJ, VectorComplexType(DV))
+    opD = sparse(DI, DJ, VectorComplexType(DV))
 
     preAI, preAJ, preAV = drop(opA, Mesh, preconditioner_drop_tol)
 
-    preA = sparsecsr(preAI, preAJ, preAV)
+    preA = sparse(preAI, preAJ, preAV)
 
     #Initialize time related structures
     time_comp = get_time_composition(Conf.time_order)
@@ -118,9 +118,9 @@ function PaulMethod2(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
 
     sizehint!(dictionary_keys, length(σset) * length(TimeMultipliers))
 
-    dictionary_values = Array{Kernel{SparseMatrixCSC{ComplexType,IntType},
-                                     SparseMatrixCSC{ComplexType,IntType},
-                                     SparseMatrixCSC{ComplexType,IntType}},1}(undef,
+    dictionary_values = Array{Kernel{SparseMatrixCSR{1,ComplexType,IntType},
+                                     SparseMatrixCSR{1,ComplexType,IntType},
+                                     SparseMatrixCSR{1,ComplexType,IntType}},1}(undef,
                                                                               0)
     sizehint!(dictionary_values, length(σset) * length(TimeMultipliers))
 
@@ -129,7 +129,13 @@ function PaulMethod2(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
         opB = (4im * opA + βτ * σ * opD)
         opC = (4im * opA - βτ * σ * opD)
         preBI, preBJ, preBV = drop(opB, Mesh, preconditioner_drop_tol)
+        
+        opBI, opBJ, opBV = findnz(opB)
+        opCI, opCJ, opCV = findnz(opC)
+
         preB = sparsecsr(preBI, preBJ, preBV)
+        opB = sparsecsr(opBI, opBJ, opBV)
+        opC = sparsecsr(opCI, opCJ, opCV)
 
         Ker = Kernel(opB, preB, opC)
 
@@ -177,7 +183,7 @@ function PaulMethod3(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
 
     opD = sparse(DI, DJ, Vector{ComplexType}(DV))
 
-    preAI, preAJ, preAV = drop(opA, Mesh, preconditioner_drop_tol)
+    preAI, preAJ, preAV = drop(opA, Mesh, preconditioner_drop_tol,1:2)
 
     preA = sparse(preAI, preAJ, preAV)
 
@@ -202,10 +208,12 @@ function PaulMethod3(::Type{ComputeBackend}, PDE::PDEq, Grid, Conf,
     for (σ, βτ) in product(σset,
                            TimeMultipliers)
         opB = (4im * opA + βτ * σ * opD)
+        dropzeros!(opB)
         opC = (4im * opA - βτ * σ * opD)
+        dropzeros!(opC)
         preBI, preBJ, preBV = drop(opB, Mesh, preconditioner_drop_tol)
         preB = sparse(preBI, preBJ, preBV)
-
+        dropzeros!(preB)
         Ker = Kernel(opB |> CuSparseMatrixCSR, preB  |> CuSparseMatrixCSR, opC  |> CuSparseMatrixCSR)
 
         push!(dictionary_keys, (σ, βτ))

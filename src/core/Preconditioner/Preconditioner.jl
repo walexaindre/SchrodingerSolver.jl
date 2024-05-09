@@ -47,10 +47,14 @@ function drop(M::Matrix, AMesh::AM, τ::Tv, offset_ranges::RTup = 1:2,
 
     #Undropped offset positions.
     undropped_offset_positions = findall(in(nonpruned_index), one_idx_offset)
+
+    if isempty(undropped_offset_positions)
+        return col[1]*I
+    end
     #Infer offset values at used offset positions.
     minimal_offset = infer_minimal_offsets(undropped_offset_positions, offsets)
     minimal_index = apply_offsets(AMesh, Ind, minimal_offset)
-
+ 
     core_circulant_matrix_format_COO(col[minimal_index], minimal_offset, AMesh)
 end
 

@@ -1,6 +1,6 @@
 
 function DefaultSolver(::Type{ComputeBackend},
-                       dim::IntType) where {IntType,FloatType,ComplexType,VectorType,
+                       dim::IntType,spaceorder =  ntuple(Returns(:ord2), dim)) where {IntType,FloatType,ComplexType,VectorType,
                                             VectorComplexType,MatrixType,
                                             MatrixComplexType,
                                             ComputeBackend<:AbstractBackend{IntType,
@@ -11,7 +11,7 @@ function DefaultSolver(::Type{ComputeBackend},
                                                                             MatrixType,
                                                                             MatrixComplexType}}
     SolverConfig(:tord2_1_1,
-                 ntuple(Returns(:ord2), dim),
+                spaceorder,
                  ComputeBackend,
                  zero(IntType),
                  false,
@@ -157,10 +157,12 @@ function update_component!(PDE, Method, Mem, Stats,
         mul!(stage1, opA, b_temp)
 
         @. b_temp = -τ * stage1 + b0_temp
-        gmres!(SolverMem, opB, b_temp; M = preB, atol = get_atol(solver_params),
+
+        gmres!(SolverMem, opB, b_temp;  atol = get_atol(solver_params),
                rtol = get_rtol(solver_params),
-               itmax = get_max_iterations(solver_params))
-        update_solver_info!(Stats, SolverMem.stats.timer, SolverMem.stats.niter)
+               itmax = get_max_iterations(solver_params),M = preB, ldiv=false)
+        
+               update_solver_info!(Stats, SolverMem.stats.timer, SolverMem.stats.niter)
 
         copy!(stage2, zₗ)
         copy!(zₗ, SolverMem.x)
@@ -226,7 +228,7 @@ function update_component!(PDE, Method, Mem, Stats, style::FixedSteps{IntType},
         @. b_temp = stage1 * stage2
         mul!(stage1, opA, b_temp)
         @. b_temp = -τ * stage1 + b0_temp
-        gmres!(SolverMem, opB, b_temp; M = preB, atol = get_atol(solver_params),
+        gmres!(SolverMem, opB, b_temp; N = preB, atol = get_atol(solver_params),
                rtol = get_rtol(solver_params),
                itmax = get_max_iterations(solver_params))
         copy!(zₗ, SolverMem.x)

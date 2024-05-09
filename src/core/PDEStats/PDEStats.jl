@@ -208,7 +208,7 @@ function store(stats::Stats, path) where {Stats<:RuntimeStats}
     parameters["store_index"] = store_index
     parameters["date"] = Dates.now(UTC)
     parameters["struct"] = "RuntimeStats"
-    parameters["float_type"] = string(eltype(solver.time))
+    parameters["float_type"] = string(eltype(solver_time))
     parameters["int_type"] = string(eltype(max_elem))
     tojson = Dict()
 

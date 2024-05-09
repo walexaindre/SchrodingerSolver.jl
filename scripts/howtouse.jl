@@ -51,18 +51,19 @@ C2 = SchrodingerPDEComponent(α₂,f₂,ψ₂)
 
 PDE = SchrodingerPDEPolynomic((Ω,Ω),(C1,C2),F,N,T)
 
-Mesh = PeriodicGrid(CPUBackendF64,PDE,0.01,(100,100))
+Mesh = PeriodicGrid(CPUBackendF64,PDE,0.01,(1000,1000))
 
-Params = DefaultSolver(CPUBackendF64,2)
+Params = DefaultSolver(CPUBackendF64,2,(:ord4,:ord4))
 
 
 
 Method,Mem = PaulMethod1(CPUBackendF64,PDE,Mesh,Params)
+Method,Mem = PaulMethod2(CPUBackendF64,PDE,Mesh,Params)
 Method,Mem = PaulMethod3(CUDABackendF64,PDE,Mesh,Params)
 
 Stats = initialize_stats(Vector{Float64},PDE,Mesh,Mem,IterativeLinearSolver(CPUBackendF64),1)
 
-Problem = SchrodingerProblem(PDE,DefaultSolver(CPUBackendF64,2),Method,Mem,Stats)
+Problem = SchrodingerProblem(PDE,Params,Method,Mem,Stats)
 
 step!(Problem)
 
@@ -70,7 +71,7 @@ for i in 1:900
     step!(Problem)
 end
 
-
+save("executiontimeGPU.png",fig,px_per_unit=3)
 
 #sA = Mem.current_state_abs2
 
@@ -111,3 +112,19 @@ f = solvertime(Stats,u"ms")
 save("solvertime.png",f)
 
 f.figure[:size] = (800, 600)
+
+
+
+
+
+
+
+
+
+
+
+
+BI,BJ,BV = findnz(opB)
+brs = sparse(BI|>Array,BJ|>Array,BV|>Array)
+lop =  drop(brs,Method.Mesh|>PeriodicAbstractMesh,0.1)
+brf = sparse(preBI,preBJ,preBV)
