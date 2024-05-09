@@ -104,6 +104,65 @@ end
 
 export approximatesparsitypattern
 
+@recipe(_ComponentPower,Stats,index) do scene
+    Attributes(
+        comparewithstartup = true,
+        color = theme(scene,:color),
+        colormap = theme(scene,:colormap),
+        inspectable = theme(scene, :inspectable),
+        visible = theme(scene, :visible)
+    )
+end
+
+function Makie.plot!(p::_ComponentPower)
+    Stats = p[1]
+    τ = Stats[].τ
+    idx = p[2][]
+    log_freq = Stats[].log_frequency
+
+    comparewithzero = p.comparewithstartup
+    points = Observable(Float64[])    
+    timerange = Observable(range(0,step=τ,length=4))
+
+    function update_plot(Stats)
+        empty!(points[])
+        maxindex = Stats[].store_index-1
+        timerange[] = range(Stats[].τ,step=Stats[].τ*log_freq,length=maxindex)
+
+        if comparewithzero[]
+            append!(points[], cbrt.(calculate_diff_system_power(Stats[],idx)))
+        else
+            append!(points,Stats[].system_power[idx][1:maxindex])
+        end
+        
+    end
+
+    #Makie.Observables.onany(update_plot,Stats)
+
+    update_plot(Stats)
+    
+    Makie.scatterlines!(p,timerange,points,  color = :blue, colormap = p.colormap, inspectable = p.inspectable, visible = p.visible,marker=:hexagon,strokewidth=1,linewidth=2)
+    p
+end
+
+
+function componentpower(Stats,index)
+    p = _componentpower(Stats,index)
+    p.axis.yscale = Makie.pseudolog10
+    p.axis.xlabel = rich("t",subscript("n"))
+    p.axis.ygridvisible = false
+    p.axis.xgridvisible = false
+    p.axis.yminorgridvisible = false
+    p.axis.yticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xlabelsize = p.axis.ylabelsize = 24
+    p.axis.xticklabelsize=p.axis.yticklabelsize=24
+    p.axis.ytickformat = xs -> [toscientific(v^3) for v in xs]
+    ylims!(p.axis,(cbrt(1e-17),cbrt(1e-12)))
+    p
+end
+
+export componentpower
 
 @recipe(_SystemEnergy,Stats) do scene
     Attributes(
@@ -125,6 +184,7 @@ end
 function Makie.plot!(p::_SystemEnergy)
     Stats = p[1]
     τ = Stats[].τ
+    log_freq = Stats[].log_frequency
 
 
     comparewithzero = p.comparewithstartup
@@ -134,7 +194,7 @@ function Makie.plot!(p::_SystemEnergy)
     function update_plot(Stats)
         empty!(points[])
         maxindex = Stats[].store_index-1
-        timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
+        timerange[] = range(Stats[].τ,step=Stats[].τ*log_freq,length=maxindex)
 
         if comparewithzero[]
             append!(points[], cbrt.(calculate_diff_system_energy(Stats[])))
@@ -148,15 +208,21 @@ function Makie.plot!(p::_SystemEnergy)
 
     update_plot(Stats)
     
-    Makie.scatter!(p,timerange,points,  color = :blue, colormap = p.colormap, inspectable = p.inspectable, visible = p.visible)
+    Makie.scatterlines!(p,timerange,points,  color = :blue, colormap = p.colormap, inspectable = p.inspectable, visible = p.visible,marker=:hexagon,strokewidth=1,linewidth=2)
     p
 end
 
 function systemenergy(Stats)
     p = _systemenergy(Stats)
     p.axis.yscale = Makie.pseudolog10
-    p.axis.xlabel = "τ"
-    #p.axis.ylabel = 
+    p.axis.xlabel = rich("t",subscript("n"))
+    p.axis.ygridvisible = false
+    p.axis.xgridvisible = false
+    p.axis.yminorgridvisible = false
+    p.axis.yticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xlabelsize = p.axis.ylabelsize = 24
+    p.axis.xticklabelsize=p.axis.yticklabelsize=24
     p.axis.ytickformat = xs -> [toscientific(v^3) for v in xs]
     ylims!(p.axis,(cbrt(1e-17),cbrt(1e-12)))
     p
@@ -166,7 +232,7 @@ end
 export systemenergy
 
 
-@recipe(SystemND,Memory,Grid) do scene
+@recipe(SystemND,Memory,Grid,idx) do scene
     Attributes(
         colorscale=identity,
         colormap=theme(scene,:colormap),
@@ -178,12 +244,11 @@ end
 function Makie.plot!(Sys::SystemND)
     Grid = Sys[2][]
     Memory = Sys[1][]
+    idx = Sys[3][]
 
     current_state = Memory.current_state
 
-    points = abs2.(current_state) 
-
-    points = sum(points,dims=2)
+    points = abs2.(current_state[:,idx]) 
     
     points = points |> Array
 
@@ -193,6 +258,7 @@ function Makie.plot!(Sys::SystemND)
 
     surface!(Sys,x,y, z;colormap=Sys.colormap,inspectable=Sys.inspectable,visible=Sys.visible)
 end
+
 
 export systemnd
 
@@ -209,6 +275,7 @@ end
 function Makie.plot!(Sys::_ExecutionTime)
     Stats = Sys[1]
     τ = Stats[].τ
+    log_freq = Stats[].log_frequency
 
     points = Observable(Float64[])    
     timerange = Observable(range(τ,step=τ,length=4))
@@ -217,14 +284,14 @@ function Makie.plot!(Sys::_ExecutionTime)
     function update_plot(Stats)
         empty!(points[])
         maxindex = Stats[].store_index-1
-        timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
+        timerange[] = range(Stats[].τ,step=Stats[].τ*log_freq,length=maxindex)
         append!(points[],Stats[].step_time[1:maxindex])
         avg[] = sum(points[])/maxindex
     end
 
     update_plot(Stats)
     
-    Makie.scatter!(Sys,timerange,points,  color = RGBf(0.0039,0.239216,0.5333) , colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
+    Makie.scatterlines!(Sys,timerange,points,  color = RGBf(0.0039,0.239216,0.5333) , colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible,marker=:hexagon,strokewidth=1,linewidth=2)
     Makie.ablines!(Sys,avg[],0,color= RGBf(0.698,0.168,0.0745),linestyle=:dash,linewidth=2,fontsize=Sys.fontsize)
     Sys
 
@@ -237,7 +304,6 @@ function executiontime(Stats,ounit)
     p.axis.ygridvisible = false
     p.axis.xgridvisible = false
     p.axis.yminorgridvisible = false
-    p.axis.ylabel = "Time"
     p.axis.yticks = WilkinsonTicks(6,k_min=5)
     p.axis.xticks = WilkinsonTicks(6,k_min=5)
     p.axis.xlabelsize = p.axis.ylabelsize = 24
@@ -270,6 +336,7 @@ function Makie.plot!(Sys::_SolverTime)
     Stats = Sys[1]
     τ = Stats[].τ
     outputunit = Sys[2][]
+    log_freq = Stats[].log_frequency
 
     points = Observable(Float64[])    
     timerange = Observable(range(τ,step=τ,length=4))
@@ -277,14 +344,14 @@ function Makie.plot!(Sys::_SolverTime)
     function update_plot(Stats)
         empty!(points[])
         maxindex = Stats[].store_index-1
-        timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
+        timerange[] = range(Stats[].τ,step=Stats[].τ*log_freq,length=maxindex)
         append!(points[],Stats[].solver_time[1:maxindex])
         avg[] = sum(points[])/maxindex
     end
 
     update_plot(Stats)
     
-    Makie.scatter!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
+    Makie.scatterlines!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible,marker=:hexagon,strokewidth=1,linewidth=2)
     Makie.ablines!(Sys,avg[],0,color=:red,linestyle=:dash,linewidth=2,fontsize=Sys.fontsize)
     Sys
 
@@ -298,7 +365,6 @@ function solvertime(Stats,ounit)
     p.axis.ygridvisible = false
     p.axis.xgridvisible = false
     p.axis.yminorgridvisible = false
-    p.axis.ylabel = "Time"
     p.axis.yticks = WilkinsonTicks(6,k_min=5)
     p.axis.xticks = WilkinsonTicks(6,k_min=5)
     p.axis.xlabelsize = p.axis.ylabelsize = 24
@@ -310,7 +376,7 @@ end
 
 export solvertime
 
-@recipe(SolverIterations,Stats) do scene
+@recipe(_SolverIterations,Stats) do scene
     Attributes(
         color = theme(scene,:color),
         colormap = theme(scene,:colormap),
@@ -319,9 +385,10 @@ export solvertime
     )
 end
 
-function Makie.plot!(Sys::SolverIterations)
+function Makie.plot!(Sys::_SolverIterations)
     Stats = Sys[1]
     τ = Stats[].τ
+    log_freq = Stats[].log_frequency
 
     points = Observable(Float64[])    
     timerange = Observable(range(τ,step=τ,length=4))
@@ -329,16 +396,31 @@ function Makie.plot!(Sys::SolverIterations)
     function update_plot(Stats)
         empty!(points[])
         maxindex = Stats[].store_index-1
-        timerange[] = range(Stats[].τ,step=Stats[].τ,length=maxindex)
+        timerange[] = range(Stats[].τ,step=Stats[].τ*log_freq,length=maxindex)
 
         append!(points[],Stats[].solver_iterations[1:maxindex])
     end
 
     update_plot(Stats)
     
-    Makie.scatter!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible)
+    Makie.scatterlines!(Sys,timerange,points,  color = :blue, colormap = Sys.colormap, inspectable = Sys.inspectable, visible = Sys.visible,marker=:hexagon,strokewidth=1,linewidth=2)
     Sys
 
+end
+
+function solveriterations(Stats)
+    p=_solveriterations(Stats,fontsize=50)
+
+    p.axis.xlabel = rich("t",subscript("n"))
+    p.axis.ygridvisible = false
+    p.axis.xgridvisible = false
+    p.axis.yminorgridvisible = false
+    p.axis.ylabel = "Iterations"
+    p.axis.yticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xticks = WilkinsonTicks(6,k_min=5)
+    p.axis.xlabelsize = p.axis.ylabelsize = 24
+    p.axis.xticklabelsize=p.axis.yticklabelsize=24
+    p  
 end
 
 export solveriterations

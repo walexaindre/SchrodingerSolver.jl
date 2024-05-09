@@ -161,6 +161,12 @@ function initialize_krylov_memory(::Type{ComputeBackend}, PDE::PDEq, Mesh,
                   GmresSolver(length(mem), length(mem), memory_size, typeof(mem)))
 end
 
+function dump_backend_memory(BMem::BackendMemory)
+    BMem.current_state|>Array
+end
+
+export dump_backend_memory
+
 
 #function Base.show(io::IO, BMem::BackendMemory) where {BackendMemory}
 #    println(io, "$(typeof(BMem))")

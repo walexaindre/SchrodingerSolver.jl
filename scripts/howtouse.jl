@@ -1,4 +1,5 @@
 using SchrodingerSolver
+using Unitful
 using GLMakie
 using CUDA
 device!(1)
@@ -51,9 +52,9 @@ C2 = SchrodingerPDEComponent(α₂,f₂,ψ₂)
 
 PDE = SchrodingerPDEPolynomic((Ω,Ω),(C1,C2),F,N,T)
 
-Mesh = PeriodicGrid(CPUBackendF64,PDE,0.01,(1000,1000))
+Mesh = PeriodicGrid(CPUBackendF64,PDE,0.01,(100,100))
 
-Params = DefaultSolver(CPUBackendF64,2,(:ord4,:ord4))
+Params = DefaultSolver(CPUBackendF64,2,(:ord2,:ord2))
 
 
 
@@ -61,7 +62,7 @@ Method,Mem = PaulMethod1(CPUBackendF64,PDE,Mesh,Params)
 Method,Mem = PaulMethod2(CPUBackendF64,PDE,Mesh,Params)
 Method,Mem = PaulMethod3(CUDABackendF64,PDE,Mesh,Params)
 
-Stats = initialize_stats(Vector{Float64},PDE,Mesh,Mem,IterativeLinearSolver(CPUBackendF64),1)
+Stats = initialize_stats(Vector{Float64},PDE,Mesh,Mem,IterativeLinearSolver(CPUBackendF64),50)
 
 Problem = SchrodingerProblem(PDE,Params,Method,Mem,Stats)
 
@@ -90,7 +91,7 @@ f
 
 g = Figure(size = (800, 600))
 ax3 = Axis3(g[1, 1])
-systemnd!(ax3,Mem,Mesh)
+systemnd!(ax3,Mem,Mesh,1)
 
 
 surface!(ax3,Mesh[:,1],Mesh[:,2],abs2.(Mem.current_state[:,1]))
@@ -116,10 +117,23 @@ f.figure[:size] = (800, 600)
 
 
 
+#######
+g = Figure(size = (800, 600);fontsize = 25)
+ax3 = Axis3(g[1, 1])
+ax3.zlabel = ""
+ax3.yticks = WilkinsonTicks(6,k_min=5)
+ax3.xticks = WilkinsonTicks(6,k_min=5)
+systemnd!(ax3,Mem,Mesh,1)
+save("cfirst.png",g,px_per_unit=3)
+gz = Figure(size = (800, 600);fontsize = 25)
+zax3 = Axis3(gz[1, 1])
+zax3.zlabel = ""
+zax3.yticks = WilkinsonTicks(6,k_min=5)
+zax3.xticks = WilkinsonTicks(6,k_min=5)
+systemnd!(zax3,Mem,Mesh,2)
+save("clast.png",gz,px_per_unit=3)
 
-
-
-
+#######
 
 
 

@@ -71,7 +71,7 @@ end
         energy -= σ * dot(comp, Mem.solver_memory.x)
     end
     stage1 .= F(state_abs2)
-    vecenergy = sum(stage1; dims = 1)|>Vector
+    vecenergy = Vector(sum(stage1; dims = 1))
     energy += vecenergy[1]
     real(energy) * measure(Grid)
 end
@@ -92,7 +92,7 @@ function update_power!(stats::Stats, power,
                        idx::IntType) where {IntType<:Integer,
                                             FloatType<:AbstractFloat,
                                             Stats<:RuntimeStats{IntType,FloatType}}
-    power = power|>Vector
+    power = Vector(power)
 
     if !islocked(stats)
         for comp in 1:length(stats.system_power)
@@ -164,7 +164,7 @@ function initialize_stats(::Type{VectorType}, PDE, Grid::PerGrid, Mem, ItStop,
                                                               VectorType<:AbstractArray}
     tsteps = estimate_timesteps(PDE, Grid)
     τ = Grid.τ
-    stats = initialize_stats(VectorType, ncomponents(PDE), log_freq,τ,
+    stats = initialize_stats(VectorType, ncomponents(PDE), log_freq, τ,
                              tsteps, log_solverinfo)
     startup_stats(stats, PDE, Grid, Mem, ItStop)
     stats
@@ -199,7 +199,6 @@ function store(stats::Stats, path) where {Stats<:RuntimeStats}
     current_iter = stats.current_iteration
     store_index = stats.store_index
     τ = stats.τ
-
 
     parameters = Dict()
     parameters["log_frequency"] = logfreq
@@ -243,7 +242,8 @@ function deserialize(::Type{VectorType}, ::Type{IntType},
     τ = FloatType(parameters["τ"])
 
     RuntimeStats(system_energy, system_power, step_time, solver_time,
-                 solver_iterations, logfreq, τ, true, false, current_iter, store_index)
+                 solver_iterations, logfreq, τ, true, false, current_iter,
+                 store_index)
 end
 
 function calculate_diff_system_energy(stats::Stats) where {IntType,FloatType,
@@ -259,6 +259,24 @@ function calculate_diff_system_energy(stats::Stats) where {IntType,FloatType,
 
     @inbounds @simd for i in 1:max_elem
         output[i] = abs(stats.system_energy[i] - startup_energy)
+    end
+    output
+end
+
+function calculate_diff_system_power(stats::Stats,
+                                     index) where {IntType,FloatType,
+                                                   ArrayType,
+                                                   Stats<:RuntimeStats{IntType,
+                                                                       FloatType,
+                                                                       ArrayType}}
+    max_elem = stats.store_index - 1
+
+    startup_power = stats.system_power[index][end]
+
+    output = vundef(ArrayType, max_elem)
+
+    @inbounds @simd for i in 1:max_elem
+        output[i] = abs(stats.system_power[index][i] - startup_power)
     end
     output
 end

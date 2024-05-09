@@ -1,17 +1,19 @@
 
 function DefaultSolver(::Type{ComputeBackend},
-                       dim::IntType,spaceorder =  ntuple(Returns(:ord2), dim)) where {IntType,FloatType,ComplexType,VectorType,
-                                            VectorComplexType,MatrixType,
-                                            MatrixComplexType,
-                                            ComputeBackend<:AbstractBackend{IntType,
-                                                                            FloatType,
-                                                                            ComplexType,
-                                                                            VectorType,
-                                                                            VectorComplexType,
-                                                                            MatrixType,
-                                                                            MatrixComplexType}}
-    SolverConfig(:tord2_1_1,
-                spaceorder,
+                       dim::IntType, spaceorder = ntuple(Returns(:ord2), dim),
+                       timeorder = :tord2_1_1) where {IntType,FloatType,ComplexType,
+                                                      VectorType,
+                                                      VectorComplexType,MatrixType,
+                                                      MatrixComplexType,
+                                                      ComputeBackend<:AbstractBackend{IntType,
+                                                                                      FloatType,
+                                                                                      ComplexType,
+                                                                                      VectorType,
+                                                                                      VectorComplexType,
+                                                                                      MatrixType,
+                                                                                      MatrixComplexType}}
+    SolverConfig(timeorder,
+                 spaceorder,
                  ComputeBackend,
                  zero(IntType),
                  false,
@@ -147,7 +149,7 @@ function update_component!(PDE, Method, Mem, Stats,
     N = get_optimized(PDE)
     #End of N optimized
 
-    mul!(b0_temp,opC,ψ)
+    mul!(b0_temp, opC, ψ)
     for l in 1:(style.max_steps)
         @. current_state_abs2 = abs2(current_state)
         @. temporary_abs2 = abs2(zₗ)
@@ -158,11 +160,11 @@ function update_component!(PDE, Method, Mem, Stats,
 
         @. b_temp = -τ * stage1 + b0_temp
 
-        gmres!(SolverMem, opB, b_temp;  atol = get_atol(solver_params),
+        gmres!(SolverMem, opB, b_temp; atol = get_atol(solver_params),
                rtol = get_rtol(solver_params),
-               itmax = get_max_iterations(solver_params),M = preB, ldiv=false)
-        
-               update_solver_info!(Stats, SolverMem.stats.timer, SolverMem.stats.niter)
+               itmax = get_max_iterations(solver_params) )#M = preB, ldiv = false
+
+        update_solver_info!(Stats, SolverMem.stats.timer, SolverMem.stats.niter)
 
         copy!(stage2, zₗ)
         copy!(zₗ, SolverMem.x)
@@ -219,7 +221,7 @@ function update_component!(PDE, Method, Mem, Stats, style::FixedSteps{IntType},
     N = get_optimized(PDE)
     #End of N optimized
 
-    mul!(b0_temp,opC,ψ)
+    mul!(b0_temp, opC, ψ)
     for _ in 1:(style.nsteps)
         @. current_state_abs2 = abs2(current_state)
         @. temporary_abs2 = abs2(zₗ)
@@ -238,19 +240,17 @@ function update_component!(PDE, Method, Mem, Stats, style::FixedSteps{IntType},
 end
 
 function step!(SP::SchrodingerProblem{PDEq,SolverConf,Meth,Storage,Statistics}) where {PDEq,
-                                                                                         SolverConf,
-                                                                                         Meth,
-                                                                                         Storage,
-                                                                                         Statistics}
-
+                                                                                       SolverConf,
+                                                                                       Meth,
+                                                                                       Storage,
+                                                                                       Statistics}
     PDE = SP.PDE
     Method = SP.Method
     Memory = SP.Memory
     Stats = SP.Stats
     Conf = SP.Config
-    
-    Style = Conf.stopping_criteria
 
+    Style = Conf.stopping_criteria
 
     σ_forward = get_σ(SP.PDE)
     σ_backward = reverse(σ_forward)
@@ -261,12 +261,14 @@ function step!(SP::SchrodingerProblem{PDEq,SolverConf,Meth,Storage,Statistics}) 
     for τ in time_substeps
         #Forward
         for (component_index, σ) in enumerate(σ_forward)
-            update_component!(PDE,Method,Memory,Stats, Style, component_index, τ, σ)
+            update_component!(PDE, Method, Memory, Stats, Style, component_index, τ,
+                              σ)
         end
         #Backward
 
         for (component_index, σ) in zip(length(σ_backward):-1:1, σ_backward)
-            update_component!(PDE,Method,Memory,Stats, Style, component_index, τ, σ)
+            update_component!(PDE, Method, Memory, Stats, Style, component_index, τ,
+                              σ)
         end
     end
 
