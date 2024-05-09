@@ -157,8 +157,8 @@ function componentpower(Stats,index)
     p.axis.xticks = WilkinsonTicks(6,k_min=5)
     p.axis.xlabelsize = p.axis.ylabelsize = 24
     p.axis.xticklabelsize=p.axis.yticklabelsize=24
-    p.axis.ytickformat = xs -> [toscientific(v^3) for v in xs]
-    ylims!(p.axis,(cbrt(1e-17),cbrt(1e-12)))
+    p.axis.ytickformat = xs -> [toscientific(v^4) for v in xs]
+    ylims!(p.axis,(sqrt(sqrt(1e-17)),sqrt(sqrt(6e-11))))
     p
 end
 
@@ -197,7 +197,7 @@ function Makie.plot!(p::_SystemEnergy)
         timerange[] = range(Stats[].τ,step=Stats[].τ*log_freq,length=maxindex)
 
         if comparewithzero[]
-            append!(points[], cbrt.(calculate_diff_system_energy(Stats[])))
+            append!(points[], sqrt.(sqrt.(calculate_diff_system_energy(Stats[]))))
         else
             append!(points,Stats[].system_energy[1:maxindex])
         end
@@ -223,8 +223,8 @@ function systemenergy(Stats)
     p.axis.xticks = WilkinsonTicks(6,k_min=5)
     p.axis.xlabelsize = p.axis.ylabelsize = 24
     p.axis.xticklabelsize=p.axis.yticklabelsize=24
-    p.axis.ytickformat = xs -> [toscientific(v^3) for v in xs]
-    ylims!(p.axis,(cbrt(1e-17),cbrt(1e-12)))
+    p.axis.ytickformat = xs -> [toscientific(v^4) for v in xs]
+    ylims!(p.axis,(sqrt(sqrt(1e-17)),sqrt(sqrt(9e-11))))
     p
 end
 
