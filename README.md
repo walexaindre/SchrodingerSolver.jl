@@ -31,30 +31,8 @@ Contributions to the SchrodingerSolver project are welcome. Please refer to the 
 This project is licensed under the [MIT License](LICENSE).
 ### Usage
 
-To use the SchrodingerSolver package, you can follow these steps:
-
-1. Install Julia by following the instructions on the [Julia website](https://julialang.org/downloads/).
-
-2. Open a Julia REPL or start a Julia session in your preferred IDE.
-
-3. Install the SchrodingerSolver package by running the following command:
-
-    ```julia
-    using Pkg
-    Pkg.add("SchrodingerSolver")
-    ```
-
-4. Import the SchrodingerSolver module into your Julia session:
-
-    ```julia
-    using SchrodingerSolver
-    ```
-
-5. You can now use the functions and tools provided by the SchrodingerSolver package to solve Schrodinger equations.
 
 ### Examples
-
-
 
 ### Support
 
