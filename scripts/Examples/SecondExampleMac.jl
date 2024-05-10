@@ -21,7 +21,7 @@ function pde_parameters(ncomp, τv, hv, sord, tord)
 end
 
 const log_freq = 10
-const backend = CPUBackendF64
+const backend = CUDABackendF64
 const τ = 0.05
 const h = 0.16
 const TF = 25.0
@@ -66,7 +66,7 @@ function test(τv, hv, spord, tord)
     PDE = SchrodingerPDEPolynomic((Ω, Ω), (C1, C2, C3), F, N, TF)
     Mesh = PeriodicGrid(backend, PDE, τv, (hv, hv))
     Params = DefaultSolver(backend, 2, (spord, spord), tord)
-    Method, Mem = PaulMethod1(backend, PDE, Mesh, Params)
+    Method, Mem = PaulMethod3(backend, PDE, Mesh, Params)
     Stats = initialize_stats(Vector{Float64}, PDE, Mesh, Mem,
                              IterativeLinearSolver(backend), log_freq)
     Problem = SchrodingerProblem(PDE, Params, Method, Mem, Stats)
@@ -144,6 +144,7 @@ for (spord,tord,τv,hv) in zip(spaceorder,timeorder,τvalues,hvalues)
     catch e
         println("Error: ", e)
     end
+    break
 end
 
 PDE = SchrodingerPDEPolynomic((Ω, Ω), (C1, C2, C3), F, N, TF)

@@ -1,57 +1,69 @@
 # SchrodingerSolver [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://walexaindre.github.io/SchrodingerSolver.jl/stable/) [![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://walexaindre.github.io/SchrodingerSolver.jl/dev/) [![Build Status](https://github.com/walexaindre/SchrodingerSolver.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/walexaindre/SchrodingerSolver.jl/actions/workflows/CI.yml?query=branch%3Amaster) [![Aqua](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
+## SchrodingerSolver
+
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://walexaindre.github.io/SchrodingerSolver.jl/stable/)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://walexaindre.github.io/SchrodingerSolver.jl/dev/)
+[![Build Status](https://github.com/walexaindre/SchrodingerSolver.jl/actions/workflows/CI.yml/badge.svg?branch=master)](https://github.com/walexaindre/SchrodingerSolver.jl/actions/workflows/CI.yml?query=branch%3Amaster)
+[![Aqua](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+
+This is the README file for the SchrodingerSolver project. 
+
+### Description
+
+The SchrodingerSolver is a Julia package that provides tools for solving Schrodinger equations. It offers stable and development documentation, continuous integration, and testing using Aqua.jl.
+
+### Documentation
+
+- [Stable Documentation](https://walexaindre.github.io/SchrodingerSolver.jl/stable/)
+- [Development Documentation](https://walexaindre.github.io/SchrodingerSolver.jl/dev/)
+
+### Build Status
+
+The project's build status can be found on the [GitHub Actions page](https://github.com/walexaindre/SchrodingerSolver.jl/actions/workflows/CI.yml?query=branch%3Amaster).
+
+### Contributing
+
+Contributions to the SchrodingerSolver project are welcome. Please refer to the [Contributing Guidelines](CONTRIBUTING.md) for more information.
+
+### License
+
+This project is licensed under the [MIT License](LICENSE).
+### Usage
+
+To use the SchrodingerSolver package, you can follow these steps:
+
+1. Install Julia by following the instructions on the [Julia website](https://julialang.org/downloads/).
+
+2. Open a Julia REPL or start a Julia session in your preferred IDE.
+
+3. Install the SchrodingerSolver package by running the following command:
+
+    ```julia
+    using Pkg
+    Pkg.add("SchrodingerSolver")
+    ```
+
+4. Import the SchrodingerSolver module into your Julia session:
+
+    ```julia
+    using SchrodingerSolver
+    ```
+
+5. You can now use the functions and tools provided by the SchrodingerSolver package to solve Schrodinger equations.
+
+### Examples
 
 
-Reference template for descrption:
 
-"""
-    (x, stats) = bilq(A, b::AbstractVector{FC};
-                      c::AbstractVector{FC}=b, transfer_to_bicg::Bool=true,
-                      atol::T=√eps(T), rtol::T=√eps(T), itmax::Int=0,
-                      timemax::Float64=Inf, verbose::Int=0, history::Bool=false,
-                      callback=solver->false, iostream::IO=kstdout)
+### Support
 
-`T` is an `AbstractFloat` such as `Float32`, `Float64` or `BigFloat`.
-`FC` is `T` or `Complex{T}`.
+If you encounter any issues or have any questions about the SchrodingerSolver package, please feel free to open an issue on the [GitHub repository](https://github.com/walexaindre/SchrodingerSolver.jl/issues). We will be happy to assist you.
 
-    (x, stats) = bilq(A, b, x0::AbstractVector; kwargs...)
+### Acknowledgements
 
-BiLQ can be warm-started from an initial guess `x0` where `kwargs` are the same keyword arguments as above.
+We would like to thank the contributors and maintainers of the SchrodingerSolver package for their valuable contributions and support.
 
-Solve the square linear system Ax = b of size n using BiLQ.
-BiLQ is based on the Lanczos biorthogonalization process and requires two initial vectors `b` and `c`.
-The relation `bᴴc ≠ 0` must be satisfied and by default `c = b`.
-When `A` is Hermitian and `b = c`, BiLQ is equivalent to SYMMLQ.
+### License
 
-#### Input arguments
-
-* `A`: a linear operator that models a matrix of dimension n;
-* `b`: a vector of length n.
-
-#### Optional argument
-
-* `x0`: a vector of length n that represents an initial guess of the solution x.
-
-#### Keyword arguments
-
-* `c`: the second initial vector of length `n` required by the Lanczos biorthogonalization process;
-* `transfer_to_bicg`: transfer from the BiLQ point to the BiCG point, when it exists. The transfer is based on the residual norm;
-* `atol`: absolute stopping tolerance based on the residual norm;
-* `rtol`: relative stopping tolerance based on the residual norm;
-* `itmax`: the maximum number of iterations. If `itmax=0`, the default number of iterations is set to `2n`;
-* `timemax`: the time limit in seconds;
-* `verbose`: additional details can be displayed if verbose mode is enabled (verbose > 0). Information will be displayed every `verbose` iterations;
-* `history`: collect additional statistics on the run such as residual norms, or Aᴴ-residual norms;
-* `callback`: function or functor called as `callback(solver)` that returns `true` if the Krylov method should terminate, and `false` otherwise;
-* `iostream`: stream to which output is logged.
-
-#### Output arguments
-
-* `x`: a dense vector of length n;
-* `stats`: statistics collected on the run in a [`SimpleStats`](@ref) structure.
-
-#### References
-
-* A. Montoison and D. Orban, [*BiLQ: An Iterative Method for Nonsymmetric Linear Systems with a Quasi-Minimum Error Property*](https://doi.org/10.1137/19M1290991), SIAM Journal on Matrix Analysis and Applications, 41(3), pp. 1145--1166, 2020.
-* R. Fletcher, [*Conjugate gradient methods for indefinite systems*](https://doi.org/10.1007/BFb0080116), Numerical Analysis, Springer, pp. 73--89, 1976.
-"""
+This project is licensed under the [MIT License](LICENSE).
