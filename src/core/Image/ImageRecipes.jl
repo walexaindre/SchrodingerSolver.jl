@@ -12,7 +12,7 @@ end
 
 function Makie.plot!(p::SparsityPattern)
 
-    updated_values = p.V[]
+    updated_values = abs2.(p.V[])
 
     unique_values = unique(updated_values)
     subs = unique_values .=> 1:length(unique_values)
